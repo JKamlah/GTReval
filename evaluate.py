@@ -24,7 +24,7 @@ arg_parser.add_argument("-f", "--form", help="normalization form (default: NFC)"
                         choices=["NFC", "NFKC", "NFD", "NFKD"], default="NFC")
 arg_parser.add_argument("-c", "--categorize", help="Customized unicodedata categories", type=str, default=["Good Practice"],
                         nargs='*')
-arg_parser.add_argument("-s", "--statistical-categories", help="Customized unicodedata categories", default=["L","M","N","P","S","Z","C"],choices=["L","M","N","P","S","Z","C","all"],
+arg_parser.add_argument("-s", "--statistical-categories", help="Customized unicodedata categories. 'all' prints information about all unicode character ordered by occurence.", default=["all"],choices=["L","M","N","P","S","Z","C","all"],
                         nargs='*')
 arg_parser.add_argument("-a", "--addinfo", help="Add information, such as unicode name and/or code to output", default=["name"], choices=["name","code"], nargs='+')
 arg_parser.add_argument("-g", "--guidelines", help="Evaluated the dataset against some guidelines", type=str,
@@ -38,11 +38,23 @@ args = arg_parser.parse_args()
 
 
 def get_defaultdict(resultslvl:Dict, newlvl, instance=OrderedDict) -> None:
+    """
+    Creates a new dictionary instance into another
+    :param resultslvl:
+    :param newlvl:
+    :param instance:
+    :return:
+    """
     resultslvl[newlvl] = defaultdict(instance) if not resultslvl.get(newlvl, None) else resultslvl[newlvl]
     return
 
 
 def load_settings(fname:str) -> DefaultDict:
+    """
+    Loads the Settingsfile into a dict
+    :param fname:
+    :return:
+    """
     settings = defaultdict(dict)
     setting, subsetting = None, None
     with open(Path(fname), 'r') as fin:
@@ -80,6 +92,12 @@ def load_settings(fname:str) -> DefaultDict:
 
 
 def categorize(results: DefaultDict, category='combined') -> None:
+    """
+    Puts the unicode character in user-definied categories
+    :param results:
+    :param category:
+    :return:
+    """
     get_defaultdict(results["combined"], "cat")
     if category == 'combined':
         for glyphe, count in results[category]['all']['character'].items():
@@ -106,6 +124,12 @@ def categorize(results: DefaultDict, category='combined') -> None:
 
 
 def validate_with_guidelines(results:DefaultDict, args) -> None:
+    """
+    Validates each unicode character against the OCR-D or user-definded guidelines
+    :param results:
+    :param args:
+    :return:
+    """
     guideline = args.guidelines
     guidelines = load_settings("settings/analyse/guidelines")
     get_defaultdict(results, "guidelines")
@@ -151,10 +175,23 @@ def validate_with_guidelines(results:DefaultDict, args) -> None:
 
 
 def print_unicodeinfo(args,val:str,key:str) -> str:
+    """
+    Prints the Occurence, Unicode-Character and additional information
+    :param args:
+    :param val:
+    :param key:
+    :return:
+    """
     return f"{val:-{6}}  {'{'}{key}{'}'}{addinfo(args,key)}"
 
 
 def addinfo(args,key)->str:
+    """
+    Adds info to the single unicode statistics like the hexa code or the unicodename
+    :param args:
+    :param key:
+    :return:
+    """
     info = " "
     if "code" in args.addinfo:
         info += str(hex(ord(key)))+" "
@@ -164,6 +201,15 @@ def addinfo(args,key)->str:
 
 
 def report_subsection(fout, subsection:str, result:DefaultDict, header="", subheaderinfo="") -> None:
+    """
+    Creats subsection reports
+    :param fout:
+    :param subsection:
+    :param result:
+    :param header:
+    :param subheaderinfo:
+    :return:
+    """
     addline = '\n'
     fout.write(f"""
     {header}
@@ -200,10 +246,22 @@ def report_subsection(fout, subsection:str, result:DefaultDict, header="", subhe
 
 
 def sum_statistics(result:DefaultDict, section:str) -> int:
+    """
+    Sums up all occrurences
+    :param result:
+    :param section:
+    :return:
+    """
     return sum([val for subsection in result[section].values() for val in subsection.values()])
 
 
 def summerize(results:DefaultDict, category:str) -> None:
+    """
+    Summarizes the results of multiple input data
+    :param results:
+    :param category:
+    :return:
+    """
     if category in results:
         get_defaultdict(results, "sum")
         results["sum"]["sum"] = results["sum"].get('sum', 0)
@@ -228,7 +286,30 @@ def summerize(results:DefaultDict, category:str) -> None:
                 results["sum"]["sum"] += intermediate_sum
     return
 
+def get_nested_val(ndict, keys, default=0):
+    """
+    Returns a value or the default value for a key in a nested dictionary
+    :param ndict:
+    :param keys:
+    :param default:
+    :return:
+    """
+    val = default
+    for key in keys:
+        val = ndict.get(key, default)
+        if isinstance(val, dict):
+           ndict = val
+        elif val == 0: return val
+    return val
+
+
 def create_report(result:DefaultDict, output:str) -> None:
+    """
+    Creates the report
+    :param result:
+    :param output:
+    :return:
+    """
     fpoint = 10
     fnames = "; ".join(set([str(fname.resolve().parent) for fname in args.fname]))
     if not output:
@@ -243,13 +324,13 @@ def create_report(result:DefaultDict, output:str) -> None:
     \n{"-" * 60}\n""")
     if "combined" in result.keys():
         subheader = f"""
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('Z', 0).get('SPACE', 0).get('Zs', 0).get('sum', 0):-{fpoint}} : ASCII Spacing Symbols
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('N', 0).get('DIGIT', 0).get('Nd', 0).get('sum', 0):-{fpoint}} : ASCII Digits
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('L', 0).get('LATIN', 0).get('sum', 0):-{fpoint}} : ASCII Letters
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('L', 0).get('LATIN', 0).get('Ll', 0).get('sum', 0):-{fpoint}} : ASCII Lowercase Letters
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('L', 0).get('LATIN', 0).get('Lu', 0).get('sum', 0):-{fpoint}} : ASCII Uppercase Letters
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('P', 0).get('sum', 0):-{fpoint}} : Punctuation & Symbols
-        {result.get('combined', 0).get('cat', 0).get('sum', 0).get('sum', 0):-{fpoint}} : Total Glyphes
+        {get_nested_val(result,['combined', 'cat', 'sum', 'Z','SPACE', 'Zs','sum']):-{fpoint}} : ASCII Spacing Symbols
+        {get_nested_val(result,['combined', 'cat', 'sum', 'N', 'DIGIT', 'Nd', 'sum']):-{fpoint}} : ASCII Digits
+        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'sum']):-{fpoint}} : ASCII Letters
+        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'Ll', 'sum']):-{fpoint}} : ASCII Lowercase Letters
+        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'Lu', 'sum']):-{fpoint}} : ASCII Uppercase Letters
+        {get_nested_val(result,['combined', 'cat', 'sum', 'P', 'sum']):-{fpoint}} : Punctuation & Symbols
+        {get_nested_val(result,['combined', 'cat', 'sum', 'sum']):-{fpoint}} : Total Glyphes
     """
         report_subsection(fout, "L", defaultdict(str), header="Statistics combined", subheaderinfo=subheader)
     if args.guidelines in result["guidelines"].keys():
@@ -283,6 +364,12 @@ def create_report(result:DefaultDict, output:str) -> None:
 
 
 def create_json(results:dict, output:Path) -> None:
+    """
+    Prints the results as json
+    :param results:
+    :param output:
+    :return:
+    """
     if output:
         jout = output.with_suffix(".json").open("w", encoding='utf-8')
     else:
@@ -294,6 +381,11 @@ def create_json(results:dict, output:Path) -> None:
 
 
 def set_output(args):
+    """
+    Sets the output format for the report, if output is None it prints to stdout
+    :param output:
+    :return:
+    """
     output = args.output
     if not output: return
     if not output.parent.exists():
@@ -305,6 +397,10 @@ def set_output(args):
 
 
 def main():
+    """
+    Reads textfiles, evaluate the unicodecharacter and creates a report
+    :return:
+    """
     # Set filenames or path
     args.orig_fname = args.fname
     if len(args.fname) == 1 and not args.fname[0].is_file():
@@ -316,7 +412,7 @@ def main():
     for fname in args.fname:
         with io.open(fname, 'r', encoding='utf-8') as fin:
             try:
-                text = unicodedata.normalize(args.textnormalization, fin.read().strip().replace("\t"," "))
+                text = unicodedata.normalize(args.textnormalization, fin.read().strip().replace("\t"," ").replace("\n", ""))
                 get_defaultdict(results['single'], fname)
                 results['single'][fname]['text'] = text
             except UnicodeDecodeError:
