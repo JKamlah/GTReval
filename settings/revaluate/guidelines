@@ -1,0 +1,55 @@
+# Check fraction atm simpyl with regex (1/5 --> ⅕)
+[OCRD-1]
+Unicode == s --> LETTER LONG S
+[GT4HIST]
+Unicode ==  B <--> V
+           #¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
+            #t <--> i
+            #a <--> g
+            #u <--> n
+            #r <--> n
+            #s --> ſ
+            #s --> f <-- ſ
+            #f --> ſ
+            #ſ --> f
+            #l -> I
+            #l -> J
+            #J -> I
+            #c <--> e
+           #r <--> x
+            #r --> t
+            #t --> r
+            #t --> l
+            #l --> t
+            #— --> ⸗
+            #- --> ⸗
+            #= --> ⸗
+            #e --> e̕
+            #e --> e̓
+            #ä --> aͤ
+            #ö --> oͤ
+            #ü --> uͤ
+            #a --> aͤ
+            #o --> oͤ
+            #u --> uͤ
+            #r --> ꝛ
+	        #t --> ꝛ
+	        #e --> ẽ
+           #n --> ñ
+           #a --> ã
+           #o --> õ
+
+
+[ONB]
+Unicode ==  u <--> n
+            b <--> h
+            t <--> l
+            r <--> t
+            r --> ꝛ
+            #s --> f <-- ſ
+#            ¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
+#            r --> x
+#            x --> r
+
+
+#Regex == ß --> sz ??
