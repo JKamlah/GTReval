@@ -48,6 +48,11 @@ def get_defaultdict(resultslvl:Dict, newlvl, instance=OrderedDict) -> None:
     resultslvl[newlvl] = defaultdict(instance) if not resultslvl.get(newlvl, None) else resultslvl[newlvl]
     return
 
+def controlcharacter_check(glyphe):
+    if len(glyphe) == 1 and (ord(glyphe) < int(0x001F) or int(0x007F) <= ord(glyphe) <= int(0x009F)):
+        return True
+    else:
+        return False
 
 def load_settings(fname:str) -> DefaultDict:
     """
@@ -90,7 +95,6 @@ def load_settings(fname:str) -> DefaultDict:
             return settings
     return settings
 
-
 def categorize(results: DefaultDict, category='combined') -> None:
     """
     Puts the unicode character in user-definied categories
@@ -101,10 +105,12 @@ def categorize(results: DefaultDict, category='combined') -> None:
     get_defaultdict(results["combined"], "cat")
     if category == 'combined':
         for glyphe, count in results[category]['all']['character'].items():
-            if glyphe in ['\t']: continue
-            uname = unicodedata.name(glyphe)
-            ucat = unicodedata.category(glyphe)
-            usubcat = uname.split(' ')[0]
+            if controlcharacter_check(glyphe):
+                uname, ucat, usubcat = "L", "S", "CC"
+            else:
+                uname = unicodedata.name(glyphe)
+                ucat = unicodedata.category(glyphe)
+                usubcat = uname.split(' ')[0]
             get_defaultdict(results[category]["cat"], ucat[0])
             get_defaultdict(results[category]["cat"][ucat[0]], usubcat)
             get_defaultdict(results[category]["cat"][ucat[0]][usubcat], ucat)
@@ -117,7 +123,11 @@ def categorize(results: DefaultDict, category='combined') -> None:
             for glyphe, count in results['combined']['all']['character'].items():
                 for subcat, subkeys in categories[category].items():
                     for subkey in subkeys:
-                        if ord(glyphe) == subkey or subkey in unicodedata.name(glyphe).replace(' ', ''):
+                        if controlcharacter_check(glyphe):
+                            uname = "ControlCharacter"
+                        else:
+                           uname = unicodedata.name(glyphe)
+                        if ord(glyphe) == subkey or subkey in uname:
                             get_defaultdict(results["combined"]["usr"][category], subcat)
                             results["combined"]["usr"][category][subcat][glyphe] = count
     return
@@ -154,9 +164,13 @@ def validate_with_guidelines(results:DefaultDict, args) -> None:
 
                     else:
                         for glyphe in text:
+                            if controlcharacter_check(glyphe):
+                                uname = "ControlCharacter"
+                            else:
+                                uname = unicodedata.name(glyphe)
                             if ord(glyphe) == condition or \
                                 isinstance(condition, str) and \
-                                    condition.upper() in unicodedata.name(glyphe):
+                                    condition.upper() in uname:
                                 get_defaultdict(results["guidelines"], guideline)
                                 get_defaultdict(results["guidelines"][guideline], conditionkey, instance = int)
                                 results["guidelines"][guideline][conditionkey][condition] += 1
@@ -182,7 +196,7 @@ def print_unicodeinfo(args,val:str,key:str) -> str:
     :param key:
     :return:
     """
-    return f"{val:-{6}}  {'{'}{key}{'}'}{addinfo(args,key)}"
+    return f"{val:-{6}}  {'{'}{ repr(key) if controlcharacter_check(key) else key}{'}'}{addinfo(args, key)}"
 
 
 def addinfo(args,key)->str:
@@ -193,6 +207,7 @@ def addinfo(args,key)->str:
     :return:
     """
     info = " "
+    if len(key) > 1 or controlcharacter_check(key): return ""
     if "code" in args.addinfo:
         info += str(hex(ord(key)))+" "
     if "name" in args.addinfo:
@@ -270,7 +285,7 @@ def summerize(results:DefaultDict, category:str) -> None:
         for sectionkey, sectionval in results[category].items():
             get_defaultdict(results["sum"][category], sectionkey)
             results["sum"][category][sectionkey]["sum"] = 0
-            if isinstance(sectionval, dict):
+            if isinstance(list(sectionval.values())[0], dict):
                 for subsectionkey, subsectionval in sorted(sectionval.items()):
                     get_defaultdict(results["sum"][category][sectionkey], subsectionkey)
                     intermediate_sum = sum(subsectionval.values())
@@ -278,7 +293,6 @@ def summerize(results:DefaultDict, category:str) -> None:
                     results["sum"][category][sectionkey]["sum"] += intermediate_sum
                     results["sum"][category]["sum"] += intermediate_sum
                     results["sum"]["sum"] += intermediate_sum
-
             else:
                 intermediate_sum = sum(sectionval.values())
                 results["sum"][category][sectionkey]["sum"] = intermediate_sum
@@ -412,7 +426,7 @@ def main():
     for fname in args.fname:
         with io.open(fname, 'r', encoding='utf-8') as fin:
             try:
-                text = unicodedata.normalize(args.textnormalization, fin.read().strip().replace("\t"," ").replace("\n", ""))
+                text = unicodedata.normalize(args.textnormalization, fin.read().strip())
                 get_defaultdict(results['single'], fname)
                 results['single'][fname]['text'] = text
             except UnicodeDecodeError:

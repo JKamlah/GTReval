@@ -1,0 +1,3 @@
+Dieser Text ist OCR-D1 konform.
+Ein Fehler  wäre am Ende ein /
+Weitere Fehler sind tabs 	, ſ und uͤ sowie⸗Doppelbindestrich .
