@@ -26,8 +26,8 @@ arg_parser.add_argument("-r", "--revaluate", help="Guidelines for the automatic 
                         default="GT4HIST")
 arg_parser.add_argument("-t", "--textnormalization", help="Textnormalization settings", type=str, default="NFC",
                         choices=["NFC", "NFKC", "NFD", "NFKD"])
-arg_parser.add_argument("-l", "--log", help="logs glyphe subsitutions", action="store_true")
-arg_parser.add_argument("-v", "--verbose", help="shows information, like glyphe subsitutions", action="store_true")
+arg_parser.add_argument("-l", "--log", help="logs glyph subsitutions", action="store_true")
+arg_parser.add_argument("-v", "--verbose", help="shows information, like glyph subsitutions", action="store_true")
 
 
 def get_defaultdict(resultslvl, newlvl, instance=OrderedDict):
@@ -179,9 +179,9 @@ def revaluate(gt: str, filename: Path, args):
                         if "unicode" in conditionkey.lower():
                             for gtidx, ocridx in zip(range(value[0], value[1]), range(value[2], value[3])):
                                 if gt[gtidx] in guidelines[guideline][conditionkey].keys():
-                                    for glyphe in guidelines[guideline][conditionkey][gt[gtidx]]:
+                                    for glyph in guidelines[guideline][conditionkey][gt[gtidx]]:
                                         if ocr[ocridx] == "\n": continue
-                                        if ord(ocr[ocridx]) == glyphe or str(glyphe) in unicodedata.name(
+                                        if ord(ocr[ocridx]) == glyph or str(glyph) in unicodedata.name(
                                                 str(ocr[ocridx])):
                                             ocr = update_replacement(guidelines[guideline][conditionkey], gt[gtidx], ocr, ocridx)
                                             gtlist[gtidx] = ocr[ocridx]

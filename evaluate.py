@@ -5,10 +5,10 @@ import io
 import json
 import re
 import sys
-from typing import DefaultDict, Dict
 import unicodedata
 from collections import defaultdict, Counter, OrderedDict
 from pathlib import Path
+from typing import DefaultDict, Dict
 
 # Command line arguments.
 arg_parser = argparse.ArgumentParser(description='Evaluate the ground truth texts for the given text files.')
@@ -16,53 +16,59 @@ arg_parser.add_argument("fname", type=lambda x: Path(x), help="filename of text 
 arg_parser.add_argument("-o", "--output", type=lambda x: Path(x) if x is not None else None, default=None,
                         help="filename of the output report, \
                         if none is given the result is printed to stdout")
-arg_parser.add_argument("-j", "--json", help="will also output the all results as json file (including the guideline_violations)",
+arg_parser.add_argument("-j", "--json",
+                        help="will also output the all results as json file (including the guideline_violations)",
                         action="store_true")
 arg_parser.add_argument("-n", "--dry-run", help="show which files would be normalized but don't change them",
                         action="store_true")
 arg_parser.add_argument("-f", "--form", help="normalization form (default: NFC)",
                         choices=["NFC", "NFKC", "NFD", "NFKD"], default="NFC")
-arg_parser.add_argument("-c", "--categorize", help="Customized unicodedata categories", type=str, default=["Good Practice"],
+arg_parser.add_argument("-c", "--categorize", help="Customized unicodedata categories", type=str,
+                        default=["Good Practice"],
                         nargs='*')
-arg_parser.add_argument("-s", "--statistical-categories", help="Customized unicodedata categories. 'all' prints information about all unicode character ordered by occurence.", default=["all"],choices=["L","M","N","P","S","Z","C","all"],
+arg_parser.add_argument("-s", "--statistical-categories",
+                        help="Customized unicodedata categories. 'all' prints information about all unicode character ordered by occurence.",
+                        default=["all"], choices=["L", "M", "N", "P", "S", "Z", "C", "all"],
                         nargs='*')
-arg_parser.add_argument("-a", "--addinfo", help="Add information, such as unicode name and/or code to output", default=["name"], choices=["name","code"], nargs='+')
+arg_parser.add_argument("-a", "--addinfo", help="Add information, such as unicode name and/or code to output",
+                        default=["name"], choices=["name", "code"], nargs='+')
 arg_parser.add_argument("-g", "--guidelines", help="Evaluated the dataset against some guidelines", type=str,
                         default="OCRD-1", choices=["OCRD-1", "OCRD-2", "OCRD-3"])
 arg_parser.add_argument("-t", "--textnormalization", help="Textnormalization settings", type=str, default="NFC",
                         choices=["NFC", "NFKC", "NFD", "NFKD"])
 arg_parser.add_argument("-v", "--verbose", help="show ignored files", action="store_true")
 
-
 args = arg_parser.parse_args()
 
 
-def get_defaultdict(resultslvl:Dict, newlvl, instance=OrderedDict) -> None:
+def get_defaultdict(resultslvl: Dict, newlvl, instance=OrderedDict) -> None:
     """
     Creates a new dictionary instance into another
-    :param resultslvl:
-    :param newlvl:
-    :param instance:
+    :param resultslvl: Instance of the current level
+    :param newlvl: name of the new  level
+    :param instance: type of the defaultdict instance
     :return:
     """
     resultslvl[newlvl] = defaultdict(instance) if not resultslvl.get(newlvl, None) else resultslvl[newlvl]
     return
 
-def controlcharacter_check(glyphe):
+
+def controlcharacter_check(glyph):
     """
-    Checks if glyphe is controlcharacter (unicodedata cant handle CC as input)
-    :param glyphe: Unicode glyphe
+    Checks if glyph is controlcharacter (unicodedata cant handle CC as input)
+    :param glyph: Unicode glyph
     :return:
     """
-    if len(glyphe) == 1 and (ord(glyphe) < int(0x001F) or int(0x007F) <= ord(glyphe) <= int(0x009F)):
+    if len(glyph) == 1 and (ord(glyph) < int(0x001F) or int(0x007F) <= ord(glyph) <= int(0x009F)):
         return True
     else:
         return False
 
-def load_settings(fname:str) -> DefaultDict:
+
+def load_settings(fname: str) -> DefaultDict:
     """
-    Loads the Settingsfile into a dict
-    :param fname:
+    Loads the settings file into a dict
+    :param fname: name of the settings file
     :return:
     """
     settings = defaultdict(dict)
@@ -100,49 +106,50 @@ def load_settings(fname:str) -> DefaultDict:
             return settings
     return settings
 
+
 def categorize(results: DefaultDict, category='combined') -> None:
     """
     Puts the unicode character in user-definied categories
-    :param results:
-    :param category:
+    :param results: results instance
+    :param category: category
     :return:
     """
     get_defaultdict(results["combined"], "cat")
     if category == 'combined':
-        for glyphe, count in results[category]['all']['character'].items():
-            if controlcharacter_check(glyphe):
+        for glyph, count in results[category]['all']['character'].items():
+            if controlcharacter_check(glyph):
                 uname, ucat, usubcat = "L", "S", "CC"
             else:
-                uname = unicodedata.name(glyphe)
-                ucat = unicodedata.category(glyphe)
+                uname = unicodedata.name(glyph)
+                ucat = unicodedata.category(glyph)
                 usubcat = uname.split(' ')[0]
             get_defaultdict(results[category]["cat"], ucat[0])
             get_defaultdict(results[category]["cat"][ucat[0]], usubcat)
             get_defaultdict(results[category]["cat"][ucat[0]][usubcat], ucat)
-            results[category]["cat"][ucat[0]][usubcat][ucat].update({glyphe: count})
+            results[category]["cat"][ucat[0]][usubcat][ucat].update({glyph: count})
     else:
         get_defaultdict(results["combined"], "usr")
         categories = load_settings("settings/analyse/categories")
         if categories and category in categories.keys():
-            get_defaultdict(results["combined"]["usr"],category)
-            for glyphe, count in results['combined']['all']['character'].items():
+            get_defaultdict(results["combined"]["usr"], category)
+            for glyph, count in results['combined']['all']['character'].items():
                 for subcat, subkeys in categories[category].items():
                     for subkey in subkeys:
-                        if controlcharacter_check(glyphe):
+                        if controlcharacter_check(glyph):
                             uname = "ControlCharacter"
                         else:
-                           uname = unicodedata.name(glyphe)
-                        if ord(glyphe) == subkey or subkey in uname:
+                            uname = unicodedata.name(glyph)
+                        if ord(glyph) == subkey or subkey in uname:
                             get_defaultdict(results["combined"]["usr"][category], subcat)
-                            results["combined"]["usr"][category][subcat][glyphe] = count
+                            results["combined"]["usr"][category][subcat][glyph] = count
     return
 
 
-def validate_with_guidelines(results:DefaultDict, args) -> None:
+def validate_with_guidelines(results: DefaultDict, args) -> None:
     """
     Validates each unicode character against the OCR-D or user-definded guidelines
-    :param results:
-    :param args:
+    :param results: result instance
+    :param args: arguments instance
     :return:
     """
     guideline = args.guidelines
@@ -157,77 +164,77 @@ def validate_with_guidelines(results:DefaultDict, args) -> None:
                         count = re.findall(rf"{condition}", text)
                         if count:
                             get_defaultdict(results["guidelines"], guideline)
-                            get_defaultdict(results["guidelines"][guideline], conditionkey, instance = int)
+                            get_defaultdict(results["guidelines"][guideline], conditionkey, instance=int)
                             results["guidelines"][guideline][conditionkey][condition] += len(count)
                             if args.verbose:
                                 print(file)
                                 print(condition)
-                                print(text+'\n')
+                                print(text + '\n')
                             if args.json:
-                                get_defaultdict(results['single'][file],'guideline_violation',instance = int)
+                                get_defaultdict(results['single'][file], 'guideline_violation', instance=int)
                                 results['single'][file]['guideline_violation'][condition] += len(count)
 
                     else:
-                        for glyphe in text:
-                            if controlcharacter_check(glyphe):
+                        for glyph in text:
+                            if controlcharacter_check(glyph):
                                 uname = "ControlCharacter"
                             else:
-                                uname = unicodedata.name(glyphe)
-                            if ord(glyphe) == condition or \
-                                isinstance(condition, str) and \
+                                uname = unicodedata.name(glyph)
+                            if ord(glyph) == condition or \
+                                    isinstance(condition, str) and \
                                     condition.upper() in uname:
                                 get_defaultdict(results["guidelines"], guideline)
-                                get_defaultdict(results["guidelines"][guideline], conditionkey, instance = int)
+                                get_defaultdict(results["guidelines"][guideline], conditionkey, instance=int)
                                 results["guidelines"][guideline][conditionkey][condition] += 1
                                 if args.verbose:
                                     import shutil
-                                    fout= Path(f"./output/{file.name}")
+                                    fout = Path(f"./output/{file.name}")
                                     if not fout.parent.exists():
                                         fout.parent.mkdir()
                                     fout.open("w").write(text)
                                     imgname = str(file.name).replace('.gt.txt', '.png')
-                                    shutil.copy(file.parent.joinpath(imgname),Path("./output/"))
+                                    shutil.copy(file.parent.joinpath(imgname), Path("./output/"))
                                     print(file)
                                     print(condition if isinstance(condition, str) else chr(condition))
                                     print(text + '\n')
     return
 
 
-def print_unicodeinfo(args,val:str,key:str) -> str:
+def print_unicodeinfo(args, val: str, key: str) -> str:
     """
-    Prints the Occurence, Unicode-Character and additional information
-    :param args:
-    :param val:
-    :param key:
+    Prints the occurrence, unicode character or guideline rules and additional information
+    :param args: arguments instance
+    :param val: count of the occurrences of key
+    :param key: key (glyph or guideline rules)
     :return:
     """
-    return f"{val:-{6}}  {'{'}{ repr(key) if controlcharacter_check(key) else key}{'}'}{addinfo(args, key)}"
+    return f"{val:-{6}}  {'{'}{repr(key) if controlcharacter_check(key) else key}{'}'}{addinfo(args, key)}"
 
 
-def addinfo(args,key)->str:
+def addinfo(args, key) -> str:
     """
     Adds info to the single unicode statistics like the hexa code or the unicodename
-    :param args:
-    :param key:
+    :param args: arguments instance
+    :param key: key string (glyphs or guideline rules)
     :return:
     """
     info = " "
     if len(key) > 1 or controlcharacter_check(key): return ""
     if "code" in args.addinfo:
-        info += str(hex(ord(key)))+" "
+        info += str(hex(ord(key))) + " "
     if "name" in args.addinfo:
         info += unicodedata.name(key)
     return info.rstrip()
 
 
-def report_subsection(fout, subsection:str, result:DefaultDict, header="", subheaderinfo="") -> None:
+def report_subsection(fout, subsection: str, result: DefaultDict, header="", subheaderinfo="") -> None:
     """
     Creats subsection reports
-    :param fout:
-    :param subsection:
-    :param result:
-    :param header:
-    :param subheaderinfo:
+    :param fout: name of the outputfile
+    :param subsection: name of subsection
+    :param result: result instance
+    :param header: header info string
+    :param subheaderinfo: subheader info string
     :return:
     """
     addline = '\n'
@@ -246,40 +253,40 @@ def report_subsection(fout, subsection:str, result:DefaultDict, header="", subhe
                 fout.write(f"""
             {key}:""")
                 for subkey, subval in sorted(val.items()):
-                    if isinstance(subkey,int) or len(subkey) ==1:
+                    if isinstance(subkey, int) or len(subkey) == 1:
                         subkey = ord(subkey)
                         fout.write(f"""
-                            {print_unicodeinfo(args,subval,subkey)}""")
+                            {print_unicodeinfo(args, subval, subkey)}""")
                     else:
                         fout.write(f"""
-                            {print_unicodeinfo(args,subval,chr(subkey))}""")
+                            {print_unicodeinfo(args, subval, chr(subkey))}""")
             else:
-                if isinstance(key,int):
+                if isinstance(key, int):
                     fout.write(f"""
-                        {print_unicodeinfo(args,val,chr(key))}""")
+                        {print_unicodeinfo(args, val, chr(key))}""")
                 else:
                     fout.write(f"""
-                        {print_unicodeinfo(args,val,key)}""")
+                        {print_unicodeinfo(args, val, key)}""")
     fout.write(f"""
     \n{"-" * 60}\n""")
     return
 
 
-def sum_statistics(result:DefaultDict, section:str) -> int:
+def sum_statistics(result: DefaultDict, section: str) -> int:
     """
     Sums up all occrurences
-    :param result:
-    :param section:
+    :param result: result instance
+    :param section: section to sum
     :return:
     """
     return sum([val for subsection in result[section].values() for val in subsection.values()])
 
 
-def summerize(results:DefaultDict, category:str) -> None:
+def summerize(results: DefaultDict, category: str) -> None:
     """
     Summarizes the results of multiple input data
-    :param results:
-    :param category:
+    :param results: results instance
+    :param category: category
     :return:
     """
     if category in results:
@@ -305,28 +312,30 @@ def summerize(results:DefaultDict, category:str) -> None:
                 results["sum"]["sum"] += intermediate_sum
     return
 
+
 def get_nested_val(ndict, keys, default=0):
     """
     Returns a value or the default value for a key in a nested dictionary
-    :param ndict:
-    :param keys:
-    :param default:
+    :param ndict: nested dict instance
+    :param keys: keys
+    :param default: default value if the
     :return:
     """
     val = default
     for key in keys:
         val = ndict.get(key, default)
         if isinstance(val, dict):
-           ndict = val
-        elif val == 0: return val
+            ndict = val
+        elif val == 0:
+            return val
     return val
 
 
-def create_report(result:DefaultDict, output:str) -> None:
+def create_report(result: DefaultDict, output: str) -> None:
     """
     Creates the report
-    :param result:
-    :param output:
+    :param result: results instance
+    :param output: output string
     :return:
     """
     fpoint = 10
@@ -343,13 +352,13 @@ def create_report(result:DefaultDict, output:str) -> None:
     \n{"-" * 60}\n""")
     if "combined" in result.keys():
         subheader = f"""
-        {get_nested_val(result,['combined', 'cat', 'sum', 'Z','SPACE', 'Zs','sum']):-{fpoint}} : ASCII Spacing Symbols
-        {get_nested_val(result,['combined', 'cat', 'sum', 'N', 'DIGIT', 'Nd', 'sum']):-{fpoint}} : ASCII Digits
-        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'sum']):-{fpoint}} : ASCII Letters
-        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'Ll', 'sum']):-{fpoint}} : ASCII Lowercase Letters
-        {get_nested_val(result,['combined', 'cat', 'sum', 'L', 'LATIN', 'Lu', 'sum']):-{fpoint}} : ASCII Uppercase Letters
-        {get_nested_val(result,['combined', 'cat', 'sum', 'P', 'sum']):-{fpoint}} : Punctuation & Symbols
-        {get_nested_val(result,['combined', 'cat', 'sum', 'sum']):-{fpoint}} : Total Glyphes
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'Z', 'SPACE', 'Zs', 'sum']):-{fpoint}} : ASCII Spacing Symbols
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'N', 'DIGIT', 'Nd', 'sum']):-{fpoint}} : ASCII Digits
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'L', 'LATIN', 'sum']):-{fpoint}} : ASCII Letters
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'L', 'LATIN', 'Ll', 'sum']):-{fpoint}} : ASCII Lowercase Letters
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'L', 'LATIN', 'Lu', 'sum']):-{fpoint}} : ASCII Uppercase Letters
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'P', 'sum']):-{fpoint}} : Punctuation & Symbols
+        {get_nested_val(result, ['combined', 'cat', 'sum', 'sum']):-{fpoint}} : Total Glyphes
     """
         report_subsection(fout, "L", defaultdict(str), header="Statistics combined", subheaderinfo=subheader)
     if args.guidelines in result["guidelines"].keys():
@@ -368,25 +377,25 @@ def create_report(result:DefaultDict, output:str) -> None:
             result["combined"]["all"]["character"] = dict(result["combined"]["all"]["character"].most_common())
             report_subsection(fout, "all", result["combined"], header={"Overall unicode character statistics"})
         for cat in set(args.statistical_categories).intersection(set(result["combined"].keys())):
-            if cat in ["all","sum"]: continue
-            report_subsection(fout, cat, result["combined"]["cat"], header={"L":"Overall Letter statistics",
-                                                                    "Z" :"Overall Separator statistics",
-                                                                    "P": "Overall Punctuatinon statistics",
-                                                                    "M": "Overall Mark statistics",
-                                                                    "N": "Overall Number statistics",
-                                                                    "S": "Overall Symbol statistics",
-                                                                    "C": "Overall Other statistics"}.get(cat))
+            if cat in ["all", "sum"]: continue
+            report_subsection(fout, cat, result["combined"]["cat"], header={"L": "Overall Letter statistics",
+                                                                            "Z": "Overall Separator statistics",
+                                                                            "P": "Overall Punctuatinon statistics",
+                                                                            "M": "Overall Mark statistics",
+                                                                            "N": "Overall Number statistics",
+                                                                            "S": "Overall Symbol statistics",
+                                                                            "C": "Overall Other statistics"}.get(cat))
     fout.flush()
     if fout != sys.stdout:
         fout.close()
     return
 
 
-def create_json(results:dict, output:Path) -> None:
+def create_json(results: dict, output: Path) -> None:
     """
     Prints the results as json
-    :param results:
-    :param output:
+    :param results: results instance
+    :param output: output path
     :return:
     """
     if output:
@@ -417,7 +426,7 @@ def set_output(args):
 
 def main():
     """
-    Reads textfiles, evaluate the unicodecharacter and creates a report
+    Reads text files, evaluate the unicode character and creates a report
     :return:
     """
     # Set filenames or path
@@ -441,7 +450,8 @@ def main():
 
     # Analyse the combined statistics
     get_defaultdict(results, 'combined')
-    results['combined']['all']['character'] = Counter("".join([text for fileinfo in results['single'].values() for text in fileinfo.values()]))
+    results['combined']['all']['character'] = Counter(
+        "".join([text for fileinfo in results['single'].values() for text in fileinfo.values()]))
     # Categorize the combined statistics with standard categories
     categorize(results, category='combined')
 
@@ -453,7 +463,7 @@ def main():
     validate_with_guidelines(results, args)
 
     # Summerize category data
-    for section in ["cat","usr"]:
+    for section in ["cat", "usr"]:
         for key in set(results["combined"][section].keys()):
             summerize(results["combined"][section], key)
 
