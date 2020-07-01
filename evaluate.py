@@ -53,7 +53,7 @@ def get_defaultdict(resultslvl: Dict, newlvl, instance=OrderedDict) -> None:
     return
 
 
-def controlcharacter_check(glyph):
+def controlcharacter_check(glyph: str):
     """
     Checks if glyph is controlcharacter (unicodedata cant handle CC as input)
     :param glyph: unicode glyph

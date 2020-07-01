@@ -30,7 +30,7 @@ arg_parser.add_argument("-l", "--log", help="logs glyph subsitutions", action="s
 arg_parser.add_argument("-v", "--verbose", help="shows information, like glyph subsitutions", action="store_true")
 
 
-def get_defaultdict(resultslvl, newlvl, instance=OrderedDict):
+def get_defaultdict(resultslvl: dict, newlvl: str, instance=OrderedDict):
     """
     Creates a new dictionary instance into another
     :param resultslvl: instance of the current level
@@ -116,7 +116,7 @@ def subcounter(func):
 
 @subcounter
 @lru_cache()
-def substitutiontext(gtmatch, ocrmatch):
+def substitutiontext(gtmatch: str, ocrmatch: str):
     """
     Create a string that highlights subsituted parts
     :param gtmatch: original string
@@ -125,7 +125,7 @@ def substitutiontext(gtmatch, ocrmatch):
     """
     return f"--{gtmatch}--++{ocrmatch}++"
 
-def update_replacement(guideline, gt, ocr, ocridx):
+def update_replacement(guideline: dict, gt: str, ocr, ocridx: int):
     """
     Updates the ocr'd string
     :param guideline: guideline which character should be replaced
@@ -231,7 +231,7 @@ def revaluate(gt: str, filename: Path, args):
     return "".join(gtlist)
 
 
-def open_stream_to(writer, fname):
+def open_stream_to(writer, fname: Path):
     """
     Opens a writer stream, if it is already open it closes it first
     :param writer: writer instance
