@@ -33,7 +33,7 @@ arg_parser.add_argument("-v", "--verbose", help="shows information, like glyph s
 def get_defaultdict(resultslvl, newlvl, instance=OrderedDict):
     """
     Creates a new dictionary instance into another
-    :param resultslvl: Instance of the current level
+    :param resultslvl: instance of the current level
     :param newlvl: name of the new  level
     :param instance: type of the defaultdict instance
     :return:
@@ -92,7 +92,7 @@ def load_settings(filename: str):
 
 def next_ocrmatch(subs, ocr):
     """
-    Iters through all findings from sub string in the ocrd text
+    Iterates through all findings from sub string in the ocrd text
     :param subs: sub string
     :param ocr: ocr string
     :return:
@@ -119,8 +119,8 @@ def subcounter(func):
 def substitutiontext(gtmatch, ocrmatch):
     """
     Create a string that highlights subsituted parts
-    :param gtmatch: Original string
-    :param ocrmatch: New ocr'd string
+    :param gtmatch: original string
+    :param ocrmatch: new ocr'd string
     :return:
     """
     return f"--{gtmatch}--++{ocrmatch}++"
@@ -129,9 +129,9 @@ def update_replacement(guideline, gt, ocr, ocridx):
     """
     Updates the ocr'd string
     :param guideline: guideline which character should be replaced
-    :param gt: Original string
-    :param ocr: New ocr'd string
-    :param ocridx: Index of the substituions character
+    :param gt: original string
+    :param ocr: new ocr'd string
+    :param ocridx: index of the substitution characters
     :return:
     """
     rep = guideline.get("<--").get(gt, None) if guideline.get('<--',None) else None

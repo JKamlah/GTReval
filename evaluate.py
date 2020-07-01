@@ -44,7 +44,7 @@ args = arg_parser.parse_args()
 def get_defaultdict(resultslvl: Dict, newlvl, instance=OrderedDict) -> None:
     """
     Creates a new dictionary instance into another
-    :param resultslvl: Instance of the current level
+    :param resultslvl: instance of the current level
     :param newlvl: name of the new  level
     :param instance: type of the defaultdict instance
     :return:
@@ -56,7 +56,7 @@ def get_defaultdict(resultslvl: Dict, newlvl, instance=OrderedDict) -> None:
 def controlcharacter_check(glyph):
     """
     Checks if glyph is controlcharacter (unicodedata cant handle CC as input)
-    :param glyph: Unicode glyph
+    :param glyph: unicode glyph
     :return:
     """
     if len(glyph) == 1 and (ord(glyph) < int(0x001F) or int(0x007F) <= ord(glyph) <= int(0x009F)):
@@ -318,9 +318,10 @@ def get_nested_val(ndict, keys, default=0):
     Returns a value or the default value for a key in a nested dictionary
     :param ndict: nested dict instance
     :param keys: keys
-    :param default: default value if the
+    :param default: default value
     :return:
     """
+    # TODO: Maybe it is faster with try (ndict[allkeys]) and except (default)..
     val = default
     for key in keys:
         val = ndict.get(key, default)
@@ -380,7 +381,7 @@ def create_report(result: DefaultDict, output: str) -> None:
             if cat in ["all", "sum"]: continue
             report_subsection(fout, cat, result["combined"]["cat"], header={"L": "Overall Letter statistics",
                                                                             "Z": "Overall Separator statistics",
-                                                                            "P": "Overall Punctuatinon statistics",
+                                                                            "P": "Overall Punctuation statistics",
                                                                             "M": "Overall Mark statistics",
                                                                             "N": "Overall Number statistics",
                                                                             "S": "Overall Symbol statistics",
