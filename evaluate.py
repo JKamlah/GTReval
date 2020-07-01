@@ -49,6 +49,11 @@ def get_defaultdict(resultslvl:Dict, newlvl, instance=OrderedDict) -> None:
     return
 
 def controlcharacter_check(glyphe):
+    """
+    Checks if glyphe is controlcharacter (unicodedata cant handle CC as input)
+    :param glyphe: Unicode glyphe
+    :return:
+    """
     if len(glyphe) == 1 and (ord(glyphe) < int(0x001F) or int(0x007F) <= ord(glyphe) <= int(0x009F)):
         return True
     else:

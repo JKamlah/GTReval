@@ -31,10 +31,22 @@ arg_parser.add_argument("-v", "--verbose", help="shows information, like glyphe 
 
 
 def get_defaultdict(resultslvl, newlvl, instance=OrderedDict):
+    """
+    Creates a new dictionary instance into another
+    :param resultslvl: Instance of the current level
+    :param newlvl: name of the new  level
+    :param instance: type of the defaultdict instance
+    :return:
+    """
     resultslvl[newlvl] = defaultdict(instance) if not resultslvl.get(newlvl, None) else resultslvl[newlvl]
 
 @lru_cache()
 def load_settings(filename: str):
+    """
+    Loads the Settingsfile into a dict
+    :param fname: name of the settings file
+    :return:
+    """
     settings = defaultdict(dict)
     setting, subsetting = None, None
     with open(Path(filename), 'r') as fin:
@@ -79,11 +91,22 @@ def load_settings(filename: str):
 
 
 def next_ocrmatch(subs, ocr):
+    """
+    Iters through all findings from sub string in the ocrd text
+    :param subs: sub string
+    :param ocr: ocr string
+    :return:
+    """
     for sub in subs:
         for ocrmatch in re.finditer(sub, ocr):
             yield ocrmatch
 
 def subcounter(func):
+    """
+    Wrapper helper count function
+    :param func: function
+    :return:
+    """
     def helper(*_args, **_kwargs):
         helper.calls[_args[0]+"→"+_args[1]] += 1
         return func(*_args, **_kwargs)
@@ -94,9 +117,23 @@ def subcounter(func):
 @subcounter
 @lru_cache()
 def substitutiontext(gtmatch, ocrmatch):
+    """
+    Create a string that highlights subsituted parts
+    :param gtmatch: Original string
+    :param ocrmatch: New ocr'd string
+    :return:
+    """
     return f"--{gtmatch}--++{ocrmatch}++"
 
 def update_replacement(guideline, gt, ocr, ocridx):
+    """
+    Updates the ocr'd string
+    :param guideline: guideline which character should be replaced
+    :param gt: Original string
+    :param ocr: New ocr'd string
+    :param ocridx: Index of the substituions character
+    :return:
+    """
     rep = guideline.get("<--").get(gt, None) if guideline.get('<--',None) else None
     if rep:
         if isinstance(ocr, str):
@@ -109,6 +146,14 @@ def update_replacement(guideline, gt, ocr, ocridx):
 
 
 def revaluate(gt: str, filename: Path, args):
+    """
+    Reads the guideline, ocr the image, compares the original groundtruth text and the ocr'd text and substitutes if it
+    is indicated by the guidelines.
+    :param gt: groundtruth text
+    :param filename: gt filename
+    :param args: arguments instance
+    :return:
+    """
     guideline = args.revaluate
     guidelines = load_settings("settings/revaluate/guidelines")
     try:
@@ -187,6 +232,12 @@ def revaluate(gt: str, filename: Path, args):
 
 
 def open_stream_to(writer, fname):
+    """
+    Opens a writer stream, if it is already open it closes it first
+    :param writer: writer instance
+    :param fname: output filename
+    :return:
+    """
     if isinstance(writer, Path):
         writer.close()
     if fname.exists():
@@ -195,6 +246,11 @@ def open_stream_to(writer, fname):
     return fname.open("r+")
 
 def write_subcounter(args):
+    """
+    Prints the information about the substitutions to the cmd or the log file
+    :param args: arguments instance
+    :return:
+    """
     subcountertxt = f"{'*' * 22}\nSubstitutions: " + \
                     "".join([f"\n\t{count:-{6}}: [{subs}]" for subs, count in substitutiontext.calls.items()]) + \
                     f"\n{'*' * 22}\n"
@@ -207,38 +263,12 @@ def write_subcounter(args):
         args.log.write(subcountertxt+content)
         args.log.flush()
 
-def revaluate_directories(fileinfo, args):
-    print(fileinfo)
-    filepath, filenames = fileinfo
-    # open stream to log files
-    if args.diffratio:
-        args.difflog = open_stream_to(args.difflog, Path(filepath.joinpath(f"diffratio_{int(args.diffratio * 100)}.log")))
-    if args.log:
-        args.log = open_stream_to(args.log, Path(filepath.joinpath("substitution.log")))
-    for filename in sorted(filenames):
-        try:
-            gt = unicodedata.normalize(args.textnormalization, filename.read_text().strip())
-            # Revaluate gt with ocr results
-            revaluated_gt = revaluate(gt, filename, args)
-            if revaluated_gt != gt and not args.dry_run:
-                filename.open("w").write(revaluated_gt)
-
-        except UnicodeDecodeError:
-            if args.verbose:
-                print(filename.name + " (ignored)")
-            continue
-
-    # Print counter
-    if args.verbose or args.log:
-        write_subcounter(args)
-
-    # close stream to log files
-    if args.diffratio:
-        args.difflog.close()
-    if args.log:
-        args.log.close()
-
 def main(args):
+    """
+    Main function to rule based revaluate the groundtruth against ocr
+    :param args: arguments instance
+    :return:
+    """
     # set filenames or path
     filenames = defaultdict(list)
 
