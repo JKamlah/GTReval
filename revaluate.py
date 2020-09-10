@@ -7,6 +7,7 @@ import unicodedata
 from collections import defaultdict, OrderedDict
 from functools import lru_cache
 from pathlib import Path
+from tqdm import tqdm
 
 from tesserocr import PyTessBaseAPI
 
@@ -17,7 +18,7 @@ arg_parser.add_argument("-o", "--output", type=lambda x: Path(x) if x is not Non
                         help="filename of the output report, \
                         if none is given the result is printed to stdout")
 arg_parser.add_argument("--dry-run", help="Don't store the ground truth text changes", action="store_true")
-arg_parser.add_argument("-m", "--model", default="Fast_GT4HIST/Fraktur_50000000.502_198857",
+arg_parser.add_argument("-m", "--model", default="NZZ/NZZ_168",
                         help="Tesseract model to perform the ocr")  # Fast_ONB/FrakturONB1.939_155730  Fast_GT4HIST/Fraktur_50000000.502_198857
 arg_parser.add_argument("--psm", default=13, type=int, choices=range(0, 14), help="Tesseract pagesegementation mode")
 arg_parser.add_argument("-d", "--diffratio", help="logs all ratios which are beyond the given ratio (0-1)", type=float,
@@ -168,9 +169,9 @@ def revaluate(gt: str, filename: Path, args):
         api.SetImageFile(str(imgname))
         ocr = unicodedata.normalize(args.textnormalization, api.GetUTF8Text()).strip()
     gtlist = list(gt)
+    s = difflib.SequenceMatcher(None, gt, ocr)
     if guidelines and guideline in guidelines.keys():
         for conditionkey, conditions in guidelines[guideline].items():
-            s = difflib.SequenceMatcher(None, gt, ocr)
             if s.ratio() > 0.3:
                 subtext = f"{filename.name}: "
                 for groupname, *value in s.get_opcodes():
@@ -192,15 +193,15 @@ def revaluate(gt: str, filename: Path, args):
                         else:
                             for glkey in guidelines[guideline][conditionkey].keys():
                                 for gtmatch in re.finditer(glkey, gt[value[0]:value[1]]):
-                                    for ocrmatch in next_ocrmatch(guidelines[guideline][conditionkey][glkey],
-                                                                  ocr[value[2] + gtmatch.start()]):
-                                        if ocrmatch.start() == 0:
+                                    for ocrreg in guidelines[guideline][conditionkey][glkey]:
+                                        ocrmatch = re.search(ocrreg,ocr[value[2] + gtmatch.start():])
+                                        if ocrmatch and ocrmatch.start() == 0:
                                             ocr = update_replacement(guidelines[guideline][conditionkey], glkey, ocrmatch, 0)
                                             if args.verbose or args.log:
                                                 gtsubstring = substitutiontext(gtmatch[0], ocrmatch[0])
                                             gtlist[value[0]+gtmatch.start()] = ocrmatch[0]
                                             gtlist[value[0]+gtmatch.start()+1:value[0]+gtmatch.end()] = ""
-                                        break
+                                            break
 
                     subtext += gtsubstring
 
@@ -212,22 +213,29 @@ def revaluate(gt: str, filename: Path, args):
                         args.log.flush()
 
             gt = "".join(gtlist)
+    DELETE_SUSPICOUS = False
+    if DELETE_SUSPICOUS and len(gt) > 5 and s.ratio() < args.diffratio:
+        if s.ratio() < args.diffratio:
+            args.count+=1
+            print(f"{args.count}/{args.allcount} - {s.ratio()}%")
+            import os
+            os.remove(str(filename))
+            os.remove(str(filename).replace(".gt.txt",".png"))
+    elif s.ratio() < args.diffratio and args.difflog:
+        if s.ratio() < args.diffratio:
+            args.difflog.write(f"Ratio:{s.ratio():.3f} Filename:{filename.name}\n"
+                               f"{'*'*50}\n"
+                               f"GT:  {gt}\n"
+                               f"OCR: {ocr}\n"
+                               f"DIFF:")
+            for groupname, *value in s.get_opcodes():
+                args.difflog.write({'equal': gt[value[0]:value[1]],
+                                    'replace': f"--{gt[value[0]:value[1]]}--++{ocr[value[2]:value[3]]}++",
+                                    'insert': f"++{ocr[value[2]:value[3]]}++",
+                                    'delete': f"--{gt[value[0]:value[1]]}--"}.get(groupname, ""))
+            args.difflog.write('\n\n')
+            args.difflog.flush()
 
-            if s.ratio() < args.diffratio and args.difflog:
-                s = difflib.SequenceMatcher(None, gt, ocr)
-                if s.ratio() < args.diffratio:
-                    args.difflog.write(f"Ratio:{s.ratio():.3f} Filename:{filename.name}\n"
-                                       f"{'*'*50}\n"
-                                       f"GT:  {gt}\n"
-                                       f"OCR: {ocr}\n"
-                                       f"DIFF:")
-                    for groupname, *value in s.get_opcodes():
-                        args.difflog.write({'equal': gt[value[0]:value[1]],
-                                            'replace': f"--{gt[value[0]:value[1]]}--++{ocr[value[2]:value[3]]}++",
-                                            'insert': f"++{ocr[value[2]:value[3]]}++",
-                                            'delete': f"--{gt[value[0]:value[1]]}--"}.get(groupname, ""))
-                    args.difflog.write('\n\n')
-                    args.difflog.flush()
     return "".join(gtlist)
 
 
@@ -279,8 +287,11 @@ def main(args):
         for filename in sorted(filepaths):
             filenames[filename.parent].append(filename)
     args.difflog = False
+
     # read all files
-    for filepath, filenames in filenames.items():
+    for filepath, filenames in tqdm(filenames.items()):
+        args.count = 0
+        args.allcount = len(filenames)
         # open stream to log files
         substitutiontext.calls = defaultdict(int)
         if args.diffratio:
