@@ -18,7 +18,7 @@ arg_parser.add_argument("-o", "--output", type=lambda x: Path(x) if x is not Non
                         help="filename of the output report, \
                         if none is given the result is printed to stdout")
 arg_parser.add_argument("--dry-run", help="Don't store the ground truth text changes", action="store_true")
-arg_parser.add_argument("-m", "--model", default="NZZ/NZZ_168",
+arg_parser.add_argument("-m", "--model", default="Finetuning/GT4HistRotundaR_05",
                         help="Tesseract model to perform the ocr")  # Fast_ONB/FrakturONB1.939_155730  Fast_GT4HIST/Fraktur_50000000.502_198857
 arg_parser.add_argument("--psm", default=13, type=int, choices=range(0, 14), help="Tesseract pagesegementation mode")
 arg_parser.add_argument("-d", "--diffratio", help="logs all ratios which are beyond the given ratio (0-1)", type=float,
@@ -126,6 +126,13 @@ def substitutiontext(gtmatch: str, ocrmatch: str):
     """
     return f"--{gtmatch}--++{ocrmatch}++"
 
+def string_index_replacement(text:str,idx:int,rep:str, idxrange:int =1):
+    textlist = list(text)
+    textlist[idx:idx+idxrange] = rep
+    text = "".join(textlist)
+    return text
+
+
 def update_replacement(guideline: dict, gt: str, ocr, ocridx: int):
     """
     Updates the ocr'd string
@@ -138,9 +145,7 @@ def update_replacement(guideline: dict, gt: str, ocr, ocridx: int):
     rep = guideline.get("<--").get(gt, None) if guideline.get('<--',None) else None
     if rep:
         if isinstance(ocr, str):
-            ocrlist = list(ocr)
-            ocrlist[ocridx] = rep
-            ocr = "".join(ocrlist)
+            ocr = string_index_replacement(ocr, ocridx, rep)
         else:
             ocr[ocridx] = rep
     return ocr
@@ -169,43 +174,60 @@ def revaluate(gt: str, filename: Path, args):
         api.SetImageFile(str(imgname))
         ocr = unicodedata.normalize(args.textnormalization, api.GetUTF8Text()).strip()
     gtlist = list(gt)
-    s = difflib.SequenceMatcher(None, gt, ocr)
     if guidelines and guideline in guidelines.keys():
         for conditionkey, conditions in guidelines[guideline].items():
+            s = difflib.SequenceMatcher(None, gt, ocr)
             if s.ratio() > 0.3:
                 subtext = f"{filename.name}: "
                 for groupname, *value in s.get_opcodes():
                     gtsubstring = gt[value[0]:value[1]]
                     if groupname == "replace":
                         if "unicode" in conditionkey.lower():
+                            foundidx = 0
                             for gtidx, ocridx in zip(range(value[0], value[1]), range(value[2], value[3])):
-                                if gt[gtidx] in guidelines[guideline][conditionkey].keys():
-                                    for glyph in guidelines[guideline][conditionkey][gt[gtidx]]:
+                                glyphs = guidelines[guideline][conditionkey].get(gt[gtidx], [])
+                                for glyph in glyphs:
+                                    if ocr[ocridx] == "\n": continue
+                                    if ord(ocr[ocridx]) == glyph or str(glyph) in unicodedata.name(
+                                            str(ocr[ocridx])):
+                                        ocr = update_replacement(guidelines[guideline][conditionkey], gt[gtidx], ocr, ocridx)
+                                        gtlist[gtidx] = ocr[ocridx]
+                                        if args.verbose or args.log:
+                                            gtsubstring = string_index_replacement(gtsubstring, gtidx-value[0], substitutiontext(gt[gtidx], ocr[ocridx]))
+                                        foundidx = ocridx
+                                        break
+                            if (value[1] - value[0]) - (value[3] - value[2]) != 0:
+                                for gtidx, ocridx in zip(range(value[1], value[0]), range(value[3], value[2])):
+                                    if ocridx <= foundidx: break
+                                    glyphs = guidelines[guideline][conditionkey].get(gt[gtidx], [])
+                                    for glyph in glyphs:
                                         if ocr[ocridx] == "\n": continue
                                         if ord(ocr[ocridx]) == glyph or str(glyph) in unicodedata.name(
                                                 str(ocr[ocridx])):
-                                            ocr = update_replacement(guidelines[guideline][conditionkey], gt[gtidx], ocr, ocridx)
+                                            ocr = update_replacement(guidelines[guideline][conditionkey], gt[gtidx],
+                                                                     ocr, ocridx)
                                             gtlist[gtidx] = ocr[ocridx]
                                             if args.verbose or args.log:
-                                                gtsubstring = substitutiontext(gt[gtidx], ocr[ocridx])
+                                                gtsubstring = string_index_replacement(gtsubstring, gtidx - value[0],
+                                                                                       substitutiontext(gt[gtidx],
+                                                                                                        ocr[ocridx]))
                                             break
-
                         else:
                             for glkey in guidelines[guideline][conditionkey].keys():
                                 for gtmatch in re.finditer(glkey, gt[value[0]:value[1]]):
                                     for ocrreg in guidelines[guideline][conditionkey][glkey]:
                                         ocrmatch = re.search(ocrreg,ocr[value[2] + gtmatch.start():])
                                         if ocrmatch and ocrmatch.start() == 0:
-                                            ocr = update_replacement(guidelines[guideline][conditionkey], glkey, ocrmatch, 0)
+                                            ocr = update_replacement(guidelines[guideline][conditionkey], glkey, ocrmatch[0], 0)
                                             if args.verbose or args.log:
-                                                gtsubstring = substitutiontext(gtmatch[0], ocrmatch[0])
+                                                gtsubstring = string_index_replacement(gtsubstring, gtmatch.start(), substitutiontext(gtsubstring[gtmatch.start():gtmatch.end()], ocrmatch[0]), gtmatch.start()+gtmatch.end())
                                             gtlist[value[0]+gtmatch.start()] = ocrmatch[0]
                                             gtlist[value[0]+gtmatch.start()+1:value[0]+gtmatch.end()] = ""
                                             break
 
                     subtext += gtsubstring
 
-                if gt != subtext.split(":", 1)[1].strip():
+                if gt.strip() != subtext.split(":", 1)[1].strip():
                     if args.verbose:
                         print(subtext)
                     if args.log:
@@ -298,7 +320,7 @@ def main(args):
             args.difflog = open_stream_to(args.difflog, Path(filepath.joinpath(f"diffratio_{int(args.diffratio * 100)}.log")))
         if args.log:
             args.log = open_stream_to(args.log, Path(filepath.joinpath("substitution.log")))
-        for filename in filenames:
+        for filename in tqdm(filenames):
             try:
                 gt = unicodedata.normalize(args.textnormalization, filename.read_text().lstrip())
                 # Revaluate gt with ocr results
