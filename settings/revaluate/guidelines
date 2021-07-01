@@ -2,14 +2,21 @@
 [OCRD-1]
 Unicode == s --> LETTER LONG S
 [GT4HIST]
-Unicode ==  B <--> V
-           #¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
+Unicode ==  s --> f <-- ſ
+            s --> ſ
+            r --> ꝛ
+            #¬ -->  ⸗
+            #— -->  ⸗
+            #- -->  ⸗
+            #ä --> aͤ
+            #ö --> oͤ
+            #ü --> uͤ
+            #¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
             #t <--> i
             #a <--> g
             #u <--> n
             #r <--> n
             #s --> ſ
-            #s --> f <-- ſ
             #f --> ſ
             #ſ --> f
             #l -> I
@@ -38,7 +45,9 @@ Unicode ==  B <--> V
            #n --> ñ
            #a --> ã
            #o --> õ
-
+#Regex ==  ä --> aͤ
+#            ö --> oͤ
+#            ü --> uͤ
 
 [ONB]
 Unicode ==  u <--> n

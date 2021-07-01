@@ -1,5 +1,5 @@
 [OCRD-1]
-Unicode violation == LETTER LONG S
+Unicode == LETTER LONG S
                      COMBINING LATIN
                      LIGATURE
                      LETTER AE
@@ -11,10 +11,10 @@ Unicode violation == LETTER LONG S
                      SLASH
 
 #ʞ || ɔ || WITH CARON || I WITH DIAERESIS
-Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]||[/,∕,/,／,⧸]\n||[A-z][=,⸗][A-z]ͤ
+Regex == ꝛc\.||\s\s||[A-z]\s[,;\.]||[/,∕,/,／,⧸]\n||[A-z][=,⸗][A-z]ͤ
 
 [OCRD-2]
-Unicode violation == LETTER LONG S
+Unicode == LETTER LONG S
                      COMBINING LATIN
                      LIGATURE
                      LETTER AE
@@ -25,7 +25,7 @@ Unicode violation == LETTER LONG S
                      ROTUNDA
                      SLASH
 
-Regex violation == sz||ꝛc\.||\s\s||\s[,;\.]
+Regex == sz||ꝛc\.||\s\s||\s[,;\.]
 
 [OCRD-3]
 # I und J Unterscheidung
@@ -33,7 +33,7 @@ Regex violation == sz||ꝛc\.||\s\s||\s[,;\.]
 # ſ s ß(Vorhanden?)
 # Ligaturen
 
-Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]
+Regex == ꝛc\.||\s\s||[A-z]\s[,;\.]
 
 
 

@@ -1,9 +1,15 @@
-[Fraktur]
-#RNG == 0x333-0x133||0x123-0x123
-Ll == FRAKTUR SMALL
-Lu == FRAKTUR CAPTIAL
-Long_S_Antiqua == LATIN SMALL LETTER LONG S
-
-[Good-Practice]
-Unicode == VULGAR FRACTION||ROMAN NUMERAL||SUPERSCRIPT||SUBSCRIPT||LETTER LONG S||COMBINING LATIN
-Regex == uͤ
+[Example]
+Glyph == a||b||c||d||e||f
+Hex == 0x000
+Codepoint == 10-15||17
+# Fuzzy unicode name matching
+Name == SMALL LETTER
+Name regex == COMBINING.*LETTER
+# Unicode blocks please see help or unicode "Blocks.txt" file for valid input
+Block == Basic Latin
+# Unicode blocks please see help or unicode "PropList.txt" file for valid input
+Property == Quotation Mark
+# Unicode blocks please see help or unicode "Scripts.txt" and ""ScriptExtensions.txt" file for valid input
+Script == Latin
+[Latin]
+Script == Latin
