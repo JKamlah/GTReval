@@ -1,0 +1,39 @@
+[OCRD-1]
+Unicode violation == LETTER LONG S
+                     COMBINING LATIN
+                     LIGATURE
+                     LETTER AE
+                     LETTER OE
+                     LETTER DB
+                     LETTER QP
+                     ANGLE QUOTATION
+                     ROTUNDA
+                     SLASH
+
+#ʞ || ɔ || WITH CARON || I WITH DIAERESIS
+Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]||[/,∕,/,／,⧸]\n||[A-z][=,⸗][A-z]ͤ
+
+[OCRD-2]
+Unicode violation == LETTER LONG S
+                     COMBINING LATIN
+                     LIGATURE
+                     LETTER AE
+                     LETTER OE
+                     LETTER DB
+                     LETTER QP
+                     ANGLE QUOTATION
+                     ROTUNDA
+                     SLASH
+
+Regex violation == sz||ꝛc\.||\s\s||\s[,;\.]
+
+[OCRD-3]
+# I und J Unterscheidung
+# u und v Ersetzung
+# ſ s ß(Vorhanden?)
+# Ligaturen
+
+Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]
+
+
+
