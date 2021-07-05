@@ -11,5 +11,15 @@ Block == Basic Latin
 Property == Quotation Mark
 # Unicode blocks please see help or unicode "Scripts.txt" and ""ScriptExtensions.txt" file for valid input
 Script == Latin
-[Latin]
-Script == Latin
+[BASIC-LATIN]
+Hex == 0x0021-0x007E
+[GER]
+Glyph == Ä||ä||Ö||ö||Ü||ü||ß
+[OLD-GER]
+Glyph == ſ||æ||œ||Æ||Œ||Ꝛ||ꝛ||⸗
+# COMBINING LATIN SMALL LETTER E for old umlaut
+Hex == 0x0364
+[HYPHENATION]
+Glyph == -||=||‧||¬
+
+
