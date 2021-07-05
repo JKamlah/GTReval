@@ -55,14 +55,13 @@ def categorize(results: DefaultDict, category='combined') -> None:
                             results["combined"]["usr"][category][subcat][glyph] = count
     return
 
-def missing_unicode(results: DefaultDict, ucd,  profile) -> None:
+def missing_unicode(results: DefaultDict, eval, ucd,  profile) -> None:
     """
     Puts the unicode character in user-definied categories
     :param results: results instance
     :param profile: missing unicode profile
     :return:
     """
-
     get_defaultdict(results["combined"], "missing", list)
     missing_unicodes = load_settings("settings/evaluate/missing_unicode")
     uc_codepoints = set([ord(glyph) for glyph in results['combined']['all']['character'].keys()])
@@ -86,6 +85,11 @@ def missing_unicode(results: DefaultDict, ucd,  profile) -> None:
                     elif subsetting.lower().startswith('name'):
                         results["combined"]["missing"][profile][subsetting].extend(
                             set(ucd.name_codepoints(subval, regex='regex' in subsetting.lower())).difference(uc_codepoints))
+        if not bool([subval for subval in results["combined"]["missing"][profile].values() if subval != []]):
+            results["combined"]["missing"][profile] = {f"All glyphs from '{profile}' were found!": []}
+    else:
+        if profile not in missing_unicodes.keys():
+            eval.print(f"'{profile}' was not found in the settings file")
 
 
 def validate_with_guidelines(results: DefaultDict, eval) -> None:

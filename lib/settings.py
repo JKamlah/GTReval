@@ -102,19 +102,19 @@ def read_subsettings(subsetting, value):
             else:
                 return [value]
     if subsetting.lower().startswith('glyph'):
-        if '-' in value and len(value.split('-')) == 2:
+        if '-' in value and len(value) > 1 and len(value.split('-')) == 2:
             return list(range(*[ord(val) for val in value.split('-')]))
         else:
             return [ord(value)]
     elif subsetting.lower().startswith('hex'):
-        if '-' in value and len(value.split('-')) == 2:
+        if '-' in value and len(value) > 1 and len(value.split('-')) == 2:
             start, end = value.split('-')
             if start.strip().startswith('0x') and end.strip().startswith('0x'):
                 return list(range(int(start.strip(), 16), int(end.strip(), 16)))
         else:
             return [int(value, 16)]
     elif subsetting.lower().startswith('codepoint'):
-        if '-' in value and len(value.split('-')) == 2:
+        if '-' in value and len(value) > 1 and len(value.split('-')) == 2:
             start, end = value.split('-')
             if start.isdigit() and end.isdigit():
                 return list(range(int(start.strip()), int(end.strip())))
