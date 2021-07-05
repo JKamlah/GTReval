@@ -82,7 +82,7 @@ def evaluate(fpaths, output, json, custom_categories, statistical_categories, mi
     if missing_unicodes:
         ucd = load_ucd(update=True)
         for missing_unicode_profile in missing_unicodes:
-            missing_unicode(results, ucd, profile=missing_unicode_profile)
+            missing_unicode(results, eval, ucd, profile=missing_unicode_profile)
 
     # Validate the text against the guidelines
     validate_with_guidelines(results, eval)
