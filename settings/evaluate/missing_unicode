@@ -17,7 +17,7 @@ Hex == 0x0021-0x007E
 Glyph == Ä||ä||Ö||ö||Ü||ü||ß
 [OLD-GER]
 Glyph == ſ||æ||œ||Æ||Œ||Ꝛ||ꝛ||⸗
-Combined glyph == Aͤ||aͤ||Oͤ||oͤ||Uͤ||uͤ||ؤ
+Combined glyph == Aͤ||aͤ||Oͤ||oͤ||Uͤ||uͤ
 # COMBINING LATIN SMALL LETTER E for old umlaut
 Hex == 0x0364
 [HYPHENATION]
