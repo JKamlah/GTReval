@@ -27,7 +27,7 @@ def categorize(results: DefaultDict, category='combined') -> None:
     """
     get_defaultdict(results["combined"], "cat")
     if category == 'combined':
-        for glyph, count in results[category]['all']['character'].items():
+        for glyph, count in results[category]['all']['Glyph'].items():
             if controlcharacter_check(glyph):
                 uname, ucat, usubcat = "L", "S", "CC"
             else:
@@ -43,7 +43,7 @@ def categorize(results: DefaultDict, category='combined') -> None:
         categories = load_settings("settings/evaluate/categories")
         if categories and category in categories.keys():
             get_defaultdict(results["combined"]["usr"], category)
-            for glyph, count in results['combined']['all']['character'].items():
+            for glyph, count in results['combined']['all']['Glyph'].items():
                 for subcat, subkeys in categories[category].items():
                     for subkey in subkeys:
                         if controlcharacter_check(glyph):
@@ -64,13 +64,16 @@ def missing_unicode(results: DefaultDict, eval, ucd,  profile) -> None:
     """
     get_defaultdict(results["combined"], "missing", list)
     missing_unicodes = load_settings("settings/evaluate/missing_unicode")
-    uc_codepoints = set([ord(glyph) for glyph in results['combined']['all']['character'].keys()])
+    uc_codepoints = set([ord(glyph) for glyph in results['combined']['all']['Glyph'].keys()])
+    uc_combinded_glyphs = set(results['combined']['all']['Combined glyph'].keys())
     if missing_unicodes and profile in missing_unicodes.keys():
         get_defaultdict(results["combined"]["missing"], profile, list)
         for subsetting, subvals in missing_unicodes[profile].items():
             #get_defaultdict(results["combined"]["missing"][profile], subsetting, list)
             if subsetting.lower().startswith(('glyph', 'hex', 'codepoint')):
                 results["combined"]["missing"][profile][subsetting].extend(set(subvals).difference(uc_codepoints))
+            elif subsetting.lower().startswith('combined'):
+                results["combined"]["missing"][profile][subsetting].extend(set(subvals).difference(uc_combinded_glyphs))
             else:
                 for subval in subvals:
                     if subsetting.lower().startswith('block'):

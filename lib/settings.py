@@ -101,6 +101,9 @@ def read_subsettings(subsetting, value):
                 return [int(value, 16)]
             else:
                 return [value]
+    if subsetting.lower().startswith('combined'):
+        if len(value) == 2:
+            return [value]
     if subsetting.lower().startswith('glyph'):
         if '-' in value and len(value) > 1 and len(value.split('-')) == 2:
             return list(range(*[ord(val) for val in value.split('-')]))

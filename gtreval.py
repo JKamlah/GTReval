@@ -69,8 +69,14 @@ def evaluate(fpaths, output, json, custom_categories, statistical_categories, mi
 
     # Analyse the combined statistics
     get_defaultdict(results, 'combined')
-    results['combined']['all']['character'] = Counter(
+    results['combined']['all']['Glyph'] = Counter(
         "".join([text for fileinfo in results['single'].values() for text in fileinfo.values()]))
+    results['combined']['all']['Combined glyph'] = Counter([text[idx-1]+char for fileinfo in results['single'].values() for text in fileinfo.values()
+                 for idx, char in enumerate(text) if ord(char) in [*list(range(768, 879 + 1)),
+                                                   *list(range(6832, 6848 + 1)),
+                                                   *list(range(7616, 7664 + 1)),
+                                                   *list(range(8400, 8432 + 1)),
+                                                   *list(range(65056, 65071 + 1))] and idx != 0])
     # Categorize the combined statistics with standard categories
     categorize(results, category='combined')
 

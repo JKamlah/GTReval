@@ -17,6 +17,11 @@ def print_unicodeinfo(eval, val, key) -> str:
     # The \u200E is the LR Mark so the text is rendered from left to right even if the next symbol is RL
     if isinstance(val, int):
         return f"\u200E{val:-{6}}  {'{'}{repr(key) if controlcharacter_check(key) else key}{'}'}{addinfo(eval, key)}"
+    elif isinstance(val, str) and len(unicodedata.normalize('NFD', val)) == 2:
+        val = unicodedata.normalize('NFD', val)
+        return f"\u200E{'{'}{repr(key) if controlcharacter_check(key) else key}{'}'} " \
+               f"U+{str(hex((ord(val[0])))).replace('0x', '').zfill(4)}-U+{str(hex((ord(val[1])))).replace('0x', '').zfill(4)} " \
+               f"{addinfo(eval, val)}"
     else:
         return f"\u200E{'{'}{repr(key) if controlcharacter_check(key) else key}{'}'} U+{str(val).replace('0x','').zfill(4)} {int(val, 16)}{addinfo(eval, key)}"
 
@@ -29,16 +34,28 @@ def addinfo(eval, key) -> str:
     :return:
     """
     info = " "
-    if len(key) > 1 or controlcharacter_check(key):
-        return info+"CONTROL CHARACTER"
-    if "code" in eval.addinfo:
-        info += str(hex(ord(key))) + " "
-    if "name" in eval.addinfo:
-        try:
-            info += unicodedata.name(key)
-        except ValueError:
-            info += f"NO NAME IS AVAILABLE FOR {str(hex(ord(key)))}"
-
+    if len(key) > 1:
+        if len(key)==2:
+            if "code" in eval.addinfo:
+                try:
+                    info += f"{str(hex(ord(key[0])))} - {str(hex(ord(key[1])))} "
+                except ValueError:
+                    info += f"NO NAME IS AVAILABLE FOR {key}"
+            if "name" in eval.addinfo:
+                try:
+                    info += f"{unicodedata.name(key[0])} - {unicodedata.name(key[1])}"
+                except ValueError:
+                    info += f"NO NAME IS AVAILABLE FOR {key}"
+        elif controlcharacter_check(key):
+            return info+"CONTROL CHARACTER"
+    else:
+        if "code" in eval.addinfo:
+            info += str(hex(ord(key))) + " "
+        if "name" in eval.addinfo:
+            try:
+                info += unicodedata.name(key)
+            except ValueError:
+                info += f"NO NAME IS AVAILABLE FOR {str(hex(ord(key)))}"
     return info.rstrip()
 
 
@@ -66,8 +83,12 @@ def report_subsection(fout, subsection: str, result: DefaultDict, eval, header="
         if isinstance(conditionres, list):
             if not conditionres: continue
             for subval in sorted(conditionres):
-                fout.write(f"""
-                     {print_unicodeinfo(eval, str(hex(subval)), chr(subval))}""")
+                if isinstance(subval, int):
+                    fout.write(f"""
+                         {print_unicodeinfo(eval, str(hex(subval)), chr(subval))}""")
+                else:
+                    fout.write(f"""
+                         {print_unicodeinfo(eval, subval, subval)}""")
         else:
             for key, val in conditionres.items():
                 if isinstance(val, list):
@@ -199,17 +220,17 @@ def create_report(result: DefaultDict, eval) -> None:
                               subheaderinfo=f"Overall occurrences: {occurences}")
     if "combined" in result.keys():
         if "all" in eval.statistical_categories:
-            result["combined"]["all"]["character"] = dict(result["combined"]["all"]["character"].most_common())
-            report_subsection(eval.fout, "all", result["combined"], eval, header="Overall unicode character statistics")
+            result["combined"]["all"]["Glyph"] = dict(result["combined"]["all"]["Glyph"].most_common())
+            report_subsection(eval.fout, "all", result["combined"], eval, header="Unicode glyph statistics")
         for cat in set(eval.statistical_categories).intersection(set(result["combined"].keys())):
             if cat in ["all", "sum"]: continue
-            report_subsection(eval.fout, cat, result["combined"]["cat"], eval,header={"L": "Overall Letter statistics",
-                                                                            "Z": "Overall Separator statistics",
-                                                                            "P": "Overall Punctuation statistics",
-                                                                            "M": "Overall Mark statistics",
-                                                                            "N": "Overall Number statistics",
-                                                                            "S": "Overall Symbol statistics",
-                                                                            "C": "Overall Other statistics"}.get(cat))
+            report_subsection(eval.fout, cat, result["combined"]["cat"], eval,header={"L": "Letter statistics",
+                                                                            "Z": "Separator statistics",
+                                                                            "P": "Punctuation statistics",
+                                                                            "M": "Mark statistics",
+                                                                            "N": "Number statistics",
+                                                                            "S": "Symbol statistics",
+                                                                            "C": "Other statistics"}.get(cat))
         if "missing" in result["combined"].keys():
             for cat in result["combined"]["missing"].keys():
                 report_subsection(eval.fout, cat, result["combined"]['missing'], eval,header=f"Missing characters for profile '{cat}'")
