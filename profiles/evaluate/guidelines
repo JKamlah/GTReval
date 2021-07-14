@@ -1,30 +1,15 @@
-[OCRD-1]
-Hex == 0xE000-0xF8FF
-Name == LETTER LONG S
-                     COMBINING LATIN
-                     LIGATURE
-                     LETTER AE
-                     LETTER OE
-                     LETTER DB
-                     LETTER QP
-                     ANGLE QUOTATION
-                     ROTUNDA
-                     SLASH
+[OCR-D-1]
+Hex violation == 0xE000-0xF8FF||0xFB00-0xFB06||0xA728-0xA729||0xA732-0xA73D||0xA75A-0xA75B||0x1EFA-0x1EFB||0x017F
+Regex violation == \src\.||\s\s||[A-z]\s[,;\.]||\D\s?[\/,∕,/,／,⧸]\s?\D||[A-z][=,⸗][A-z]?
 
-#ʞ || ɔ || WITH CARON || I WITH DIAERESIS
-Regex == ꝛc\.||\s\s||[A-z]\s[,;\.]||[/,∕,/,／,⧸]\n||[A-z][=,⸗][A-z]ͤ
+[OCR-D-2]
+Hex violation == 0xE000-0xF8FF||0xFB00-0xFB06||0xA728-0xA729||0xA732-0xA73D||0x1EFA-0x1EFB
+Regex violation == sz||\src\.||\s\s||\s[,;\.]
 
-[OCRD-2]
-Hex == 0xE000-0xF8FF
-Regex == sz||ꝛc\.||\s\s||\s[,;\.]
-
-[OCRD-3]
+[OCR-D-3]
 # I und J Unterscheidung
 # u und v Ersetzung
 # ſ s ß(Vorhanden?)
 # Ligaturen
-
-Regex == ꝛc\.||\s\s||[A-z]\s[,;\.]
-
-
-
+Hex violation == 0xE000-0xF8FF
+Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]

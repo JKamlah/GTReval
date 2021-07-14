@@ -1,64 +1,40 @@
-# Check fraction atm simpyl with regex (1/5 --> ⅕)
-[OCRD-1]
-Unicode == s --> LETTER LONG S
-[GT4HIST]
+# Here are some example to revaluate the data to OCR-D Level 2
+[sharp_s]
+Regex == ß --> sz
+
+[long_s]
 Unicode ==  s --> f <-- ſ
             s --> ſ
-            r --> ꝛ
-            #¬ -->  ⸗
-            #— -->  ⸗
-            #- -->  ⸗
-            #ä --> aͤ
-            #ö --> oͤ
-            #ü --> uͤ
-            #¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
-            #t <--> i
-            #a <--> g
-            #u <--> n
-            #r <--> n
-            #s --> ſ
-            #f --> ſ
-            #ſ --> f
-            #l -> I
-            #l -> J
-            #J -> I
-            #c <--> e
-           #r <--> x
-            #r --> t
-            #t --> r
-            #t --> l
-            #l --> t
-            #— --> ⸗
-            #- --> ⸗
-            #= --> ⸗
-            #e --> e̕
-            #e --> e̓
-            #ä --> aͤ
-            #ö --> oͤ
-            #ü --> uͤ
-            #a --> aͤ
-            #o --> oͤ
-            #u --> uͤ
-            #r --> ꝛ
-	        #t --> ꝛ
-	        #e --> ẽ
-           #n --> ñ
-           #a --> ã
-           #o --> õ
-#Regex ==  ä --> aͤ
-#            ö --> oͤ
-#            ü --> uͤ
+            
+[rotund_r]
+Unicode == r --> ꝛ
+           t --> ꝛ
 
-[ONB]
-Unicode ==  u <--> n
-            b <--> h
-            t <--> l
-            r <--> t
-            r --> ꝛ
-            #s --> f <-- ſ
-#            ¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
-#            r --> x
-#            x --> r
+[line_separator]
+Unicode == ¬ --> = || ¬ || ₌ || — || — || - || ⸗ || DOUBLE HYPHEN ||EQUAL TO
 
+[double_oblique_hyphen]
+Unicode == ¬ -->  ⸗
+           — -->  ⸗
+           - -->  ⸗
+           
+[old_umlaut]
+Unicode == ä --> aͤ
+           ö --> oͤ
+           ü --> uͤ
 
-#Regex == ß --> sz ??
+[J_to_I]
+Unicode == J --> I
+
+[common_errors]
+Unicode == r --> x
+           x --> r
+           t <--> i
+           c <--> e
+           r <--> x
+           r <--> t
+           t <--> l
+           l --> I
+           l --> J
+           u <--> n
+           b <--> h

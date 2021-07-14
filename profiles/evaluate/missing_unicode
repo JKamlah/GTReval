@@ -1,6 +1,9 @@
 [Example]
+# Unicode glyphs
 Glyph == a||b||c||d||e||f
-Hex == 0x000
+# Codepoint in hex form (ranges '-' are allowed)
+Hex == 0x000-0x001
+# Codepoint in integer form (ranges '-' are allowed)
 Codepoint == 10-15||17
 # Fuzzy unicode name matching
 Name == SMALL LETTER
@@ -10,7 +13,7 @@ Block == Basic Latin
 # Unicode blocks please see help or unicode "PropList.txt" file for valid input
 Property == Quotation Mark
 # Unicode blocks please see help or unicode "Scripts.txt" and ""ScriptExtensions.txt" file for valid input
-Script == Latin
+Script == Latinn
 [BASIC-LATIN]
 Hex == 0x0021-0x007E
 [GER]
