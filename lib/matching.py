@@ -1,5 +1,6 @@
 import re
 
+
 def next_ocrmatch(subs, ocr):
     """
     Iterates through all findings from sub string in the ocrd text

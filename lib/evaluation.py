@@ -1,11 +1,11 @@
-from collections import defaultdict
-import unicodedata
-from pathlib import Path
-from typing import DefaultDict
 import re
+import unicodedata
+from collections import defaultdict
+from typing import DefaultDict
 
 from lib.functools import get_defaultdict
-from lib.settings import load_settings
+from lib.settings import load_profiles
+
 
 def controlcharacter_check(glyph: str):
     """
@@ -18,6 +18,7 @@ def controlcharacter_check(glyph: str):
     else:
         return False
 
+
 def categorize(results: DefaultDict, category='combined') -> None:
     """
     Puts the unicode character in user-definied categories
@@ -27,7 +28,7 @@ def categorize(results: DefaultDict, category='combined') -> None:
     """
     get_defaultdict(results["combined"], "cat")
     if category == 'combined':
-        for glyph, count in results[category]['all']['Glyph'].items():
+        for glyph, count in results[category]['all']['glyph'].items():
             if controlcharacter_check(glyph):
                 uname, ucat, usubcat = "L", "S", "CC"
             else:
@@ -40,10 +41,10 @@ def categorize(results: DefaultDict, category='combined') -> None:
             results[category]["cat"][ucat[0]][usubcat][ucat].update({glyph: count})
     else:
         get_defaultdict(results["combined"], "usr")
-        categories = load_settings("settings/evaluate/categories")
+        categories = load_profiles("profiles/evaluate/categories")
         if categories and category in categories.keys():
             get_defaultdict(results["combined"]["usr"], category)
-            for glyph, count in results['combined']['all']['Glyph'].items():
+            for glyph, count in results['combined']['all']['glyph'].items():
                 for subcat, subkeys in categories[category].items():
                     for subkey in subkeys:
                         if controlcharacter_check(glyph):
@@ -55,95 +56,105 @@ def categorize(results: DefaultDict, category='combined') -> None:
                             results["combined"]["usr"][category][subcat][glyph] = count
     return
 
-def missing_unicode(results: DefaultDict, eval, ucd,  profile) -> None:
+
+def missing_unicode(results: DefaultDict, evalu, ucd, profile) -> None:
     """
     Puts the unicode character in user-definied categories
     :param results: results instance
+    :param evalu: process handler
+    :param ucd: unicode handler
     :param profile: missing unicode profile
     :return:
     """
     get_defaultdict(results["combined"], "missing", list)
-    missing_unicodes = load_settings("settings/evaluate/missing_unicode")
-    uc_codepoints = set([ord(glyph) for glyph in results['combined']['all']['Glyph'].keys()])
-    uc_combinded_glyphs = set(results['combined']['all']['Combined glyph'].keys())
+    missing_unicodes = load_profiles("profiles/evaluate/missing_unicode")
+    uc_codepoints = set(results['combined']['all']['codepoints'].keys())
+    uc_combinded_glyphs = set(results['combined']['all']['combined glyph'].keys())
     if missing_unicodes and profile in missing_unicodes.keys():
         get_defaultdict(results["combined"]["missing"], profile, list)
-        for subsetting, subvals in missing_unicodes[profile].items():
-            #get_defaultdict(results["combined"]["missing"][profile], subsetting, list)
-            if subsetting.lower().startswith(('glyph', 'hex', 'codepoint')):
-                results["combined"]["missing"][profile][subsetting].extend(set(subvals).difference(uc_codepoints))
-            elif subsetting.lower().startswith('combined'):
-                results["combined"]["missing"][profile][subsetting].extend(set(subvals).difference(uc_combinded_glyphs))
-            else:
-                for subval in subvals:
-                    if subsetting.lower().startswith('block'):
-                        results["combined"]["missing"][profile][subsetting].extend(
-                            set(ucd.block_codepoints(subval)).difference(uc_codepoints))
-                    elif subsetting.lower().startswith('script'):
-                        results["combined"]["missing"][profile][subsetting].extend(
-                            set(ucd.script_codepoints(subval)).difference(uc_codepoints))
-                    elif subsetting.lower().startswith('property'):
-                        results["combined"]["missing"][profile][subsetting].extend(
-                            set(ucd.property_codepoints(subval)).difference(uc_codepoints))
-                    elif subsetting.lower().startswith('name'):
-                        results["combined"]["missing"][profile][subsetting].extend(
-                            set(ucd.name_codepoints(subval, regex='regex' in subsetting.lower())).difference(uc_codepoints))
+        check_unicode(results["combined"]["missing"][profile], missing_unicodes[profile], uc_codepoints,
+                      uc_combinded_glyphs, ucd=ucd)
         if not bool([subval for subval in results["combined"]["missing"][profile].values() if subval != []]):
             results["combined"]["missing"][profile] = {f"All glyphs from '{profile}' were found!": []}
     else:
         if profile not in missing_unicodes.keys():
-            eval.print(f"'{profile}' was not found in the settings file")
+            evalu.print(f"'{profile}' was not found in the settings file")
 
 
-def validate_with_guidelines(results: DefaultDict, eval) -> None:
+def difference(fst_set, snd_set):
+    return set(fst_set).difference(set(snd_set))
+
+
+def intersection(fst_set, snd_set):
+    return set(fst_set).intersection(set(snd_set))
+
+
+def check_unicode(resdict, profiles, uc_codepoints, uc_combinded_glyphs, func='difference', ucd=None):
+    func = {'difference': difference, 'intersection': intersection}.get(func, difference)
+    for subsetting, subvals in profiles.items():
+        if subsetting.lower().startswith(('glyph', 'hex', 'codepoint')):
+            resdict[subsetting].extend(func(subvals, uc_codepoints))
+        elif subsetting.lower().startswith('combined'):
+            resdict[subsetting].extend(func(subvals, uc_combinded_glyphs))
+        elif ucd:
+            for subval in subvals:
+                if subsetting.lower().startswith('block'):
+                    resdict[subsetting].extend(func(ucd.block_codepoints(subval), uc_codepoints))
+                elif subsetting.lower().startswith('script'):
+                    resdict[subsetting].extend(func(ucd.script_codepoints(subval), uc_codepoints))
+                elif subsetting.lower().startswith('property'):
+                    resdict[subsetting].extend(func(ucd.property_codepoints(subval), uc_codepoints))
+                elif subsetting.lower().startswith('name'):
+                    resdict[subsetting].extend(
+                        func(ucd.name_codepoints(subval, regex='regex' in subsetting.lower()), uc_codepoints))
+    return
+
+
+def validate_with_guidelines(results: DefaultDict, evalu) -> None:
     """
     Validates each unicode character against the OCR-D or user-definded guidelines
     :param results: result instance
-    :param eval: arguments instance
+    :param evalu: arguments instance
     :return:
     """
-    guideline = eval.guideline
-    guidelines = eval.guidelines
+    guideline = evalu.guideline
+    guidelines = evalu.guidelines
     get_defaultdict(results, "guidelines")
+    uc_codepoints = set(results['combined']['all']['codepoints'].keys())
+    uc_combinded_glyphs = set(results['combined']['all']['combined glyph'].keys())
     if guidelines and guideline in guidelines.keys():
-        for file, fileinfo in results['single'].items():
-            text = fileinfo['text']
-            for conditionkey, conditions in guidelines[guideline].items():
-                for condition in conditions:
-                    if "REGEX" in conditionkey.upper():
+        get_defaultdict(results["guidelines"], guideline)
+        for conditionkey, conditions in guidelines[guideline].items():
+            for condition in conditions:
+                if "regex" in conditionkey.lower():
+                    for file, fileinfo in results['single'].items():
+                        text = fileinfo['text']
                         count = re.findall(rf"{condition}", text)
                         if count:
-                            get_defaultdict(results["guidelines"], guideline)
                             get_defaultdict(results["guidelines"][guideline], conditionkey, instance=int)
                             results["guidelines"][guideline][conditionkey][condition] += len(count)
-                            eval.print(str(file))
-                            eval.print(condition)
-                            eval.print(text + '\n')
-                            if eval.json:
+                            evalu.print(str(file))
+                            evalu.print(condition)
+                            evalu.print(text + '\n')
+                            if evalu.json:
                                 get_defaultdict(results['single'][file], 'guideline_violation', instance=int)
                                 results['single'][file]['guideline_violation'][condition] += len(count)
-
-                    else:
-                        for glyph in text:
-                            if controlcharacter_check(glyph):
-                                uname = "ControlCharacter"
-                            else:
-                                uname = unicodedata.name(glyph)
-                            if ord(glyph) == condition or \
-                                    isinstance(condition, str) and \
-                                    condition.upper() in uname:
-                                get_defaultdict(results["guidelines"], guideline)
-                                get_defaultdict(results["guidelines"][guideline], conditionkey, instance=int)
-                                results["guidelines"][guideline][conditionkey][condition] += 1
-                                if eval.verbose:
-                                    import shutil
-                                    fout = Path(f"./output/{file.name}")
-                                    if not fout.parent.exists():
-                                        fout.parent.mkdir()
-                                    fout.open("w").write(text)
-                                    #imgname = str(file.name).replace('.gt.txt', '.png')
-                                    #shutil.copy(file.parent.joinpath(imgname), Path("./output/"))
-                                    eval.print(file)
-                                    eval.print(condition if isinstance(condition, str) else chr(condition))
-                                    eval.print(text + '\n')
+                else:
+                    violation_codepoints = defaultdict(list)
+                    check_unicode(violation_codepoints, guidelines[guideline], uc_codepoints, uc_combinded_glyphs,
+                                  func='intersection')
+                    import itertools
+                    violation_codepoint_dict = {
+                        violation_codepoint: results['combined']['all']['codepoints'][violation_codepoint] for
+                        violation_codepoint in set(itertools.chain.from_iterable(violation_codepoints.values()))}
+                    if violation_codepoint_dict:
+                        results["guidelines"][guideline][conditionkey].update(violation_codepoint_dict)
+                    if evalu.json:
+                        for violation_codepoint in results["guidelines"][guideline][conditionkey]:
+                            for file, fileinfo in results['single'].items():
+                                text = fileinfo['text']
+                                if chr(violation_codepoint) in text:
+                                    get_defaultdict(results['single'][file], 'guideline_violation', instance=int)
+                                    results['single'][file]['guideline_violation'][condition] += text.count(
+                                        chr(violation_codepoint))
     return

@@ -12,7 +12,7 @@ from tesserocr import PyTessBaseAPI
 def revaluate_ocr(gt: str, filename: Path, reval):
     """
     Reads the guideline, ocr the image, compares the original groundtruth text and the ocr'd text and substitutes if it
-    is indicated by the guidelines.
+    is indicated by the rulesprofile.
     :param gt: groundtruth text
     :param filename: gt filename
     :param args: arguments instance

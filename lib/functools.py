@@ -1,5 +1,6 @@
 from collections import defaultdict, OrderedDict
 
+
 def get_defaultdict(resultslvl: dict, newlvl: str, instance=OrderedDict):
     """
     Creates a new dictionary instance into another

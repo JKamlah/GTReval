@@ -22,26 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-from collections import defaultdict, namedtuple, OrderedDict
-from fractions import Fraction
 import codecs
+import ftplib
 import os
 import re
 import struct
-import ftplib
 import sys
 import zipfile
-from functools import lru_cache
-
+from collections import defaultdict, namedtuple
+from fractions import Fraction
 
 from lib.io import app_path
-
-#: Ranges of surrogate pairs
-HIGH_SURROGATE_START = u"\ud800"
-HIGH_SURROGATE_END = u"\udbff"
-LOW_SURROGATE_START = u"\udc00"
-LOW_SURROGATE_END = u"\udfff"
-
 
 def preservesurrogates(s):
     """
@@ -56,12 +47,17 @@ def preservesurrogates(s):
     :param s: String to split
     :return: List of characters
     """
+    #: Ranges of surrogate pairs
+    high_surrogate_start = u"\ud800"
+    high_surrogate_end = u"\udbff"
+    low_surrogate_start = u"\udc00"
+    low_surrogate_end = u"\udfff"
     # if not isinstance(s, six.text_type):
     #     raise TypeError(u"String to split must be of type 'unicode'!")
-    surrogates_regex_str = u"[{0}-{1}][{2}-{3}]".format(HIGH_SURROGATE_START,
-                                                        HIGH_SURROGATE_END,
-                                                        LOW_SURROGATE_START,
-                                                        LOW_SURROGATE_END)
+    surrogates_regex_str = u"[{0}-{1}][{2}-{3}]".format(high_surrogate_start,
+                                                        high_surrogate_end,
+                                                        low_surrogate_start,
+                                                        low_surrogate_end)
     surrogates_regex = re.compile(u"(?:{0})|.".format(surrogates_regex_str))
     return surrogates_regex.findall(s)
 
@@ -69,7 +65,7 @@ def preservesurrogates(s):
 def _unichr(i):
     """
     Helper function for taking a Unicode scalar value and returning a Unicode character.
-    :param s: Unicode scalar value to convert.
+    :param i: Unicode scalar value to convert.
     :return: Unicode character
     """
     if not isinstance(i, int):
@@ -78,7 +74,7 @@ def _unichr(i):
         return chr(i)
     except ValueError:
         # Workaround the error "ValueError: unichr() arg not in range(0x10000) (narrow Python build)"
-        return struct.pack("i", i).decode("utf-32")
+        return struct.pack('i', i).decode('utf-32')
 
 
 def _hexstr_to_unichr(s):
@@ -96,8 +92,8 @@ def _padded_hex(i, pad_width=4, uppercase=True):
     until the string is of the specified width.  For example:
     _padded_hex(31, pad_width=4, uppercase=True) -> "001F"
     :param i: integer to convert to a hex string
-    :param pad_width: (int specifying the minimum width of the output string.  String will be padded on the left with '0'
-                      as needed.
+    :param pad_width: (int specifying the minimum width of the output string.
+    String will be padded on the left with '0' as needed.
     :param uppercase: Boolean indicating if we should use uppercase characters in the output string (default=True).
     :return: Hex string representation of the input integer.
     """
@@ -138,22 +134,23 @@ def _uax44lm2transform(s):
 
     # Ok to hard code, this name should never change: https://www.unicode.org/policies/stability_policy.html#Name
     if result != "HANGUL JUNGSEONG O-E":
-        result = medialhyphen.sub("", result)
-    result = whitespaceunderscore.sub("", result)
+        result = medialhyphen.sub('', result)
+    result = whitespaceunderscore.sub('', result)
     return result.lower()
 
 
 #: Documentation on the fields of UnicodeData.txt:
 #: https://www.unicode.org/L2/L1999/UnicodeData.html
 #: https://www.unicode.org/reports/tr44/#UnicodeData.txt
-UnicodeCharacter = namedtuple("UnicodeCharacter", ["code", "name", "category", "combining", "bidi", "decomposition",
-                                                   "decimal", "digit", "numeric", "mirrored", "unicode_1_name",
-                                                   "iso_comment", "uppercase", "lowercase", "titlecase"])
+UnicodeCharacter = namedtuple('UnicodeCharacter', ['code', 'name', 'category', 'combining', 'bidi', 'decomposition',
+                                                   'decimal', 'digit', 'numeric', 'mirrored', 'unicode_1_name',
+                                                   'iso_comment', 'uppercase', 'lowercase', 'titlecase'])
+
 
 def load_ucd(update=False):
     import pickle
     # return UnicodeData()
-    ucd_picklepath = app_path().joinpath('settings/evaluate/UCD/ucd.pickle')
+    ucd_picklepath = app_path().joinpath('profiles/evaluate/UCD/ucd.pickle')
     if ucd_picklepath.exists() and not update:
         with open(ucd_picklepath, 'rb') as fin:
             ucd = pickle.load(fin)
@@ -162,6 +159,7 @@ def load_ucd(update=False):
         with open(ucd_picklepath, 'wb') as fout:
             pickle.dump(ucd, fout)
     return ucd
+
 
 class UnicodeData:
     """Class for encapsulating the data in UnicodeData.txt"""
@@ -184,24 +182,24 @@ class UnicodeData:
         Database (UCD) and generating a lookup table.  For more info on the UCD,
         see the following website: https://www.unicode.org/ucd/
         """
-        filename = "UnicodeData.txt"
-        current_dir = app_path().joinpath('settings/evaluate/UCD/')
+        filename = 'UnicodeData.txt'
+        current_dir = app_path().joinpath('profiles/evaluate/UCD/')
         tag = re.compile(r"<\w+?>")
         start = '0x0000'
-        with codecs.open(current_dir.joinpath(filename), mode="r", encoding="utf-8") as fp:
+        with codecs.open(current_dir.joinpath(filename), mode='r', encoding='utf-8') as fp:
             for line in fp:
                 if not line.strip():
                     continue
-                data = line.strip().split(";")
+                data = line.strip().split(';')
                 # Replace the start/end range markers with their proper derived names.
-                if data[1].endswith((u"First>")):
+                if data[1].endswith(u"First>"):
                     start = (int(data[0], 16))
                     continue
-                elif data[1].endswith((u"Last>")):
+                elif data[1].endswith(u"Last>"):
                     uc_range = range(start, (int(data[0], 16)))
                 else:
                     uc_range = [(int(data[0], 16))]
-                    #else:  # Others should use naming rule NR2
+                    # else:  # Others should use naming rule NR2
                     #    data[1] += data[0]
                 for uc_value in uc_range:
                     data[3] = int(data[3])  # Convert the Canonical Combining Class value into an int.
@@ -209,7 +207,7 @@ class UnicodeData:
                         data[5] = u" ".join([_hexstr_to_unichr(s) if not tag.match(s) else s for s in data[5].split()])
                     for i in [6, 7, 8]:  # Convert the decimal, digit and numeric fields to either ints or fractions.
                         if data[i]:
-                            if "/" in data[i]:
+                            if '/' in data[i]:
                                 data[i] = Fraction(data[i])
                             else:
                                 data[i] = int(data[i])
@@ -220,17 +218,20 @@ class UnicodeData:
                     self._unicode_character_database[uc_value] = uc_data
                     self._name_codepoint_database[str(data[1])] = uc_value
 
-    #@lru_cache() TODO: Do we need caching here?
+    # @lru_cache() TODO: Do we need caching here?
     def name_codepoints(self, search, regex=False, exactmatch=False):
         if regex:
             try:
-                return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if re.match(rf'{search}', name)]
+                return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if
+                        re.match(rf"{search}", name)]
             except:
                 return []
         if exactmatch:
-            return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if search.strip().lower() == name.lower()]
+            return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if
+                    search.strip().lower() == name.lower()]
         else:
-            return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if search.strip().lower() in name.lower()]
+            return [self._name_codepoint_database[name] for name in self._name_codepoint_database.keys() if
+                    search.strip().lower() in name.lower()]
 
     def block_codepoints(self, block):
         return self._unicode_blocks.get(block, [])
@@ -238,8 +239,8 @@ class UnicodeData:
     def script_codepoints(self, script):
         return self._unicode_scripts.get(script, [])
 
-    def property_codepoints(self, property):
-        return self._unicode_properties.get(property, [])
+    def property_codepoints(self, uc_property):
+        return self._unicode_properties.get(uc_property, [])
 
     def get(self, value):
         """
@@ -256,7 +257,6 @@ class UnicodeData:
         :return: UnicodeCharacter instance with data associated with the specified value.
         """
         return self._unicode_character_database.__getitem__(item)
-
 
     def __iter__(self):
         """Function for iterating through the keys of the data."""
@@ -319,15 +319,15 @@ class UnicodeData:
         see the following website: https://www.unicode.org/ucd/
         """
         filename = "Blocks.txt"
-        current_dir = app_path().joinpath('settings/evaluate/UCD/')
-        with codecs.open(current_dir.joinpath(filename), mode="r", encoding="utf-8") as fp:
+        current_dir = app_path().joinpath('profiles/evaluate/UCD/')
+        with codecs.open(current_dir.joinpath(filename), mode='r', encoding='utf-8') as fp:
             for line in fp:
-                if not line.strip() or line.startswith("#"):
+                if not line.strip() or line.startswith('#'):
                     continue  # Skip empty lines or lines that are comments (comments start with '#')
                 # Format: Start Code..End Code; Block Name
-                block_range, block_name = line.strip().split(";")
-                start_range, end_range = block_range.strip().split("..")
-                #self._unicode_blocks[range(int(start_range, 16), int(end_range, 16) + 1)] = block_name.strip()
+                block_range, block_name = line.strip().split(';')
+                start_range, end_range = block_range.strip().split('..')
+                # self._unicode_blocks[range(int(start_range, 16), int(end_range, 16) + 1)] = block_name.strip()
                 self._unicode_blocks[block_name.strip()].extend(
                     list(range(int(start_range, 16), int(end_range, 16) + 1)))
 
@@ -337,21 +337,22 @@ class UnicodeData:
         Database (UCD) and generating a lookup table.  For more info on the UCD,
         see the following website: https://www.unicode.org/ucd/
         """
-        current_dir = app_path().joinpath('settings/evaluate/UCD/')
-        for scriptfile in ["Scripts.txt", "ScriptExtensions.txt"]:
-            with codecs.open(current_dir.joinpath(scriptfile), mode="r", encoding="utf-8") as fp:
+        current_dir = app_path().joinpath('profiles/evaluate/UCD/')
+        for scriptfile in ['Scripts.txt', 'ScriptExtensions.txt']:
+            with codecs.open(current_dir.joinpath(scriptfile), mode='r', encoding='utf-8') as fp:
                 for line in fp:
-                    if not line.strip() or line.startswith("#"):
+                    if not line.strip() or line.startswith('#'):
                         continue  # Skip empty lines or lines that are comments (comments start with '#')
                     # Format: Start Code..End Code; Script Name
-                    script_range, script_name = line.strip().split(";")
-                    script_name = script_name.split("#")[0].strip()
-                    if ".." in script_range:
-                        start_range, end_range = script_range.strip().split("..")
+                    script_range, script_name = line.strip().split(';')
+                    script_name = script_name.split('#')[0].strip()
+                    if '..' in script_range:
+                        start_range, end_range = script_range.strip().split('..')
                     else:
                         start_range, end_range = script_range.strip(), script_range.strip()
-                    #self._unicode_scripts[range(int(start_range, 16), int(end_range, 16) + 1)] = script_name.strip()
-                    self._unicode_scripts[script_name.strip()].extend(list(range(int(start_range, 16), int(end_range, 16) + 1)))
+                    # self._unicode_scripts[range(int(start_range, 16), int(end_range, 16) + 1)] = script_name.strip()
+                    self._unicode_scripts[script_name.strip()].extend(
+                        list(range(int(start_range, 16), int(end_range, 16) + 1)))
 
     def _load_unicode_property_info(self):
         """
@@ -359,22 +360,22 @@ class UnicodeData:
         Database (UCD) and generating a lookup table.  For more info on the UCD,
         see the following website: https://www.unicode.org/ucd/
         """
-        filename = "PropList.txt"
-        current_dir = app_path().joinpath('settings/evaluate/UCD/')
-        with codecs.open(current_dir.joinpath(filename), mode="r", encoding="utf-8") as fp:
+        filename = 'PropList.txt'
+        current_dir = app_path().joinpath('profiles/evaluate/UCD/')
+        with codecs.open(current_dir.joinpath(filename), mode='r', encoding='utf-8') as fp:
             for line in fp:
-                if not line.strip() or line.startswith("#"):
+                if not line.strip() or line.startswith('#'):
                     continue  # Skip empty lines or lines that are comments (comments start with '#')
                 # Format: Start Code..End Code; Property Name
-                property_range, property_name = line.strip().split(";")
-                property_name = property_name.split("#")[0].strip()
-                if ".." in property_range:
-                    start_range, end_range = property_range.strip().split("..")
+                property_range, property_name = line.strip().split(';')
+                property_name = property_name.split('#')[0].strip()
+                if '..' in property_range:
+                    start_range, end_range = property_range.strip().split('..')
                 else:
                     start_range, end_range = property_range.strip(), property_range.strip()
-                #self._unicode_properties[range(int(start_range, 16), int(end_range, 16) + 1)] = property_name.strip()
-                self._unicode_properties[property_name.replace('_', ' ').strip()].append(range(int(start_range, 16), int(end_range, 16) + 1))
-
+                # self._unicode_properties[range(int(start_range, 16), int(end_range, 16) + 1)] = property_name.strip()
+                self._unicode_properties[property_name.replace('_', ' ').strip()].append(
+                    range(int(start_range, 16), int(end_range, 16) + 1))
 
     def lookup_by_partial_name(self, partial_name):
         """
@@ -383,13 +384,13 @@ class UnicodeData:
         substring search instead of a simple match.  This method will return a generator that yields instances of
         UnicodeCharacter where the partial_name passed in is a substring of the full name.
         For example:
-        >>> ucd = UnicodeData()
-        >>> for data in ucd.lookup_by_partial_name("SHARP S"):
-        >>>     print(data.code + " " + data.name)
-        >>>
-        >>> U+00DF LATIN SMALL LETTER SHARP S
-        >>> U+1E9E LATIN CAPITAL LETTER SHARP S
-        >>> U+266F MUSIC SHARP SIGN
+        >> ucd = UnicodeData()
+        >> for data in ucd.lookup_by_partial_name("SHARP S"):
+        >>     print(data.code + " " + data.name)
+        >>
+        >> U+00DF LATIN SMALL LETTER SHARP S
+        >> U+1E9E LATIN CAPITAL LETTER SHARP S
+        >> U+266F MUSIC SHARP SIGN
         :param partial_name: Partial name of the character to look up.
         :return: Generator that yields instances of UnicodeCharacter.
         """
@@ -397,20 +398,21 @@ class UnicodeData:
             if _uax44lm2transform(partial_name) in k:
                 yield self._unicode_character_database[v]
 
+
 def update_ucd(version=None):
-    FTP_SERVER = "ftp.unicode.org"
-    REMOTE_PATH = "/Public/UCD/latest/ucd/"
-    with ftplib.FTP(FTP_SERVER) as ftp:
+    ftp_server = 'ftp.unicode.org'
+    remote_path = '/Public/UCD/latest/ucd/'
+    with ftplib.FTP(ftp_server) as ftp:
         ftp.login()  # Anonymous login
         if version and re.match(r'\d+\.\d+\.\d+', version):
-            ftp.cwd("/Public/"+version+"/ucd/")
+            ftp.cwd('/Public/' + version + '/ucd/')
         elif not version:
-            ftp.cwd(REMOTE_PATH)
+            ftp.cwd(remote_path)
         else:
             print("Please provide a valid verionnumber i.e. 14.0.0")
-        for zip_filename in [filename for filename in ftp.nlst() if filename.lower().endswith("zip")]:
+        for zip_filename in [filename for filename in ftp.nlst() if filename.lower().endswith('zip')]:
             block_size = 4096
-            with open(zip_filename, "wb") as dest_file_obj:
+            with open(zip_filename, 'wb') as dest_file_obj:
                 print("Starting download: {0}".format(zip_filename))
                 ftp.retrbinary("RETR " + zip_filename, dest_file_obj.write, block_size)
                 print("Finished downloading: {0}".format(zip_filename))
@@ -428,4 +430,3 @@ def update_ucd(version=None):
                 sys.exit(1)
             else:
                 print("Successfully tested zip file: {0}".format(zip_filename) + os.linesep)
-

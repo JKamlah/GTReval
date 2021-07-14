@@ -1,9 +1,11 @@
-from pathlib import Path
 import json
 import sys
+from pathlib import Path
+
 
 def app_path():
     return Path(__file__).parent.parent
+
 
 def open_stream_to(writer, fname: Path):
     """
@@ -19,20 +21,22 @@ def open_stream_to(writer, fname: Path):
     fname.touch()
     return fname.open("r+")
 
+
 def set_output(ctx):
     """
     Sets the output format for the report, if output is None it prints to stdout
-    :param output:
     :return:
     """
     output = ctx.output
-    if not output: return
+    if not output:
+        return
     if not output.parent.exists():
         output.parent.mkdir()
     if not output.is_file():
         output = output.joinpath("result.txt")
     ctx.output = output
     return
+
 
 def create_json(results: dict, output: Path) -> None:
     """
@@ -50,6 +54,7 @@ def create_json(results: dict, output: Path) -> None:
     jout.close()
     return
 
+
 def push_on_textfile(writer, text):
     writer.seek(0, 0)
     content = writer.read()
@@ -57,10 +62,11 @@ def push_on_textfile(writer, text):
     writer.write(text + content)
     writer.flush()
 
+
 def write_subcounter(reval):
     """
     Prints the information about the substitutions to the cmd or the log file
-    :param args: arguments instance
+    :param reval: process handler
     :return:
     """
     subcountertxt = f"{'*' * 22}\nSubstitutions: " + \
