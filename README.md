@@ -4,10 +4,11 @@ GTReval
 ![license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)
 
 ## Overview
-**Evaluates and Revaluates Ground Truth data**
+**Evaluates and Revaluates OCR Ground Truth data**
 
-Evaluates the data based on OCR-D guideline rules or user created rules.  
-Revaluates the data based on a tesseract model and a guideline rules or user created rules. 
+Evaluates the data based on OCR-D guideline rules or user created rules and also gives an
+overview about the glyphs contained and missed in the dataset. 
+Revaluates the data based on a tesseract model and custom rules. 
 
 ## Installation
 This installation is tested with Ubuntu and we expect that it should
@@ -33,8 +34,13 @@ cd GTReval
 
 ### Start the process
 
-    $ python3 evaluate.py path/to/gt args
-    $ python3 revaluate.py path/to/gt args
+    $ python3 gtmake.py evaluate path/to/gt args
+    $ python3 gtmake.py revaluate path/to/gt args
+
+### Get help
+
+    $ python3 gtmake.py evaluate --help
+    $ python3 gtmake.py revaluate --help
 
 ### Settings file
 The settings file contain OCR-D guideline rules, but it can also get extended by the user.
@@ -43,14 +49,27 @@ The profile is set by [profilename].
 '||' separates multiple arguments.
 
 #### Evaluate
-The type of rules can be set either by Unicode violaten or Regex violation.
-Unicode violation can contain either parts of the Unicode name or the unicode character.
-Regex violation can contain regex expression.
-
+The evaluation can check against guidelines, find glyph from user specific categories and missing glyphs.
+The type of rules for guidelines can be set either by unicode glyphs, name, codepoints or regex.
 ```
-[Example]  
-Unicode violation == LETTER LONG S  
-Regex violation == ꝛc\.||\s\s||[A-z]\s[,;\.]
+[Example]
+# Unicode glyphs
+Glyph == a||b||c||d||e||f
+# Codepoint in hex form (ranges '-' are allowed)
+Hex == 0x000-0x001
+# Codepoint in integer form (ranges '-' are allowed)
+Codepoint == 10-15||17
+# Fuzzy unicode name matching
+Name == SMALL LETTER
+Name regex == COMBINING.*LETTER
+
+# The following options are only valid for missing glyphs 
+# Unicode blocks please see help or unicode "Blocks.txt" file for valid input
+Block == Basic Latin
+# Unicode blocks please see help or unicode "PropList.txt" file for valid input
+Property == Quotation Mark
+# Unicode blocks please see help or unicode "Scripts.txt" and ""ScriptExtensions.txt" file for valid input
+Script == Latin
 ```
 
 #### Revaluate

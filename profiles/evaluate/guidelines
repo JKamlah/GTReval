@@ -1,5 +1,6 @@
 [OCRD-1]
-Unicode == LETTER LONG S
+Hex == 0xE000-0xF8FF
+Name == LETTER LONG S
                      COMBINING LATIN
                      LIGATURE
                      LETTER AE
@@ -14,17 +15,7 @@ Unicode == LETTER LONG S
 Regex == ꝛc\.||\s\s||[A-z]\s[,;\.]||[/,∕,/,／,⧸]\n||[A-z][=,⸗][A-z]ͤ
 
 [OCRD-2]
-Unicode == LETTER LONG S
-                     COMBINING LATIN
-                     LIGATURE
-                     LETTER AE
-                     LETTER OE
-                     LETTER DB
-                     LETTER QP
-                     ANGLE QUOTATION
-                     ROTUNDA
-                     SLASH
-
+Hex == 0xE000-0xF8FF
 Regex == sz||ꝛc\.||\s\s||\s[,;\.]
 
 [OCRD-3]
