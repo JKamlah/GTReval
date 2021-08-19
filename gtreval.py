@@ -35,13 +35,13 @@ def cli():
                    'all unicode glyphs ordered by occurence. The other options ar "L" for Letter, '
                    '"Z" for Separator, "P" for Punctuation, "M" for Mark,'
                    '"N" for Number, "S" for Symbol,i "C" for Other',
-              default=['all'], type=click.Choice(['L', 'M', 'N', 'P', 'S', 'Z', 'C', 'all']), nargs=7)
+              default=['all'], type=click.Choice(['L', 'M', 'N', 'P', 'S', 'Z', 'C', 'all']), multiple=True)
 @click.option('-m', '--missing-unicodes',
               help="Print missing unicodes in the dataset by either a profile from profiles/evaluate/missing_unicode, "
                    "a unicode rang e.g. , '0x0000-0x007F, 0x0100-0x017F'",
               type=click.STRING, multiple=True)
 @click.option('-a', '--addinfo', help="Add information, such as unicode name and/or code to output",
-              default=['name'], type=click.Choice(['name', 'code']), nargs=2)
+              default=['name'], type=click.Choice(['name', 'code']), multiple=True)
 @click.option('-g', '--guideline', help="Guidelines for the automatic revaluation",
               type=click.Choice(['OCR-D-1', 'OCR-D-2', 'OCR-D-3', 'CUSTOM']))
 @click.option('-t', '--textnormalization', help="Unicode text normalization", default='NFC',
