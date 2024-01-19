@@ -13,7 +13,7 @@ Block == Basic Latin
 # Unicode blocks please see help or unicode "PropList.txt" file for valid input
 Property == Quotation Mark
 # Unicode blocks please see help or unicode "Scripts.txt" and ""ScriptExtensions.txt" file for valid input
-Script == Latinn
+Script == Latin
 [BASIC-LATIN]
 Hex == 0x0021-0x007E
 [GER]

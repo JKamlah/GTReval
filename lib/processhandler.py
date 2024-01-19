@@ -22,7 +22,7 @@ class Processhandler(object):
         for fpath in fpaths:
             fpath = Path(fpath)
             if not fpath.is_file():
-                for fname in sorted(fpath.rglob("*.gt.txt")):
+                for fname in sorted(fpath.rglob("*.txt")):
                     files[fname.parent].append(fname)
             else:
                 files[fpath.parent].append(fpath)

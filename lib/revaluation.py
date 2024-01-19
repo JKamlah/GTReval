@@ -6,7 +6,11 @@ import imghdr
 
 from lib.editing import update_replacement, string_index_replacement, substitutiontext
 
-from tesserocr import PyTessBaseAPI
+try:
+    from tesserocr import PyTessBaseAPI
+except ImportError:
+    print("Revaluation is not available. Please install tesserocr.")
+
 
 
 def revaluate_ocr(gt: str, filename: Path, reval):

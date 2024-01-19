@@ -1,6 +1,7 @@
 import re
 import unicodedata
 from collections import defaultdict
+import itertools
 from typing import DefaultDict
 
 from lib.functools import get_defaultdict
@@ -32,9 +33,12 @@ def categorize(results: DefaultDict, category='combined') -> None:
             if controlcharacter_check(glyph):
                 uname, ucat, usubcat = "L", "S", "CC"
             else:
-                uname = unicodedata.name(glyph)
-                ucat = unicodedata.category(glyph)
-                usubcat = uname.split(' ')[0]
+                try:
+                    uname = unicodedata.name(glyph)
+                    ucat = unicodedata.category(glyph)
+                    usubcat = uname.split(' ')[0]
+                except ValueError:
+                    uname, ucat, usubcat = "Unknow", "Unknow", "Unknow"
             get_defaultdict(results[category]["cat"], ucat[0])
             get_defaultdict(results[category]["cat"][ucat[0]], usubcat)
             get_defaultdict(results[category]["cat"][ucat[0]][usubcat], ucat)
@@ -143,7 +147,6 @@ def validate_with_guidelines(results: DefaultDict, evalu) -> None:
                     violation_codepoints = defaultdict(list)
                     check_unicode(violation_codepoints, guidelines[guideline], uc_codepoints, uc_combinded_glyphs,
                                   func='intersection')
-                    import itertools
                     violation_codepoint_dict = {
                         violation_codepoint: results['combined']['all']['codepoints'][violation_codepoint] for
                         violation_codepoint in set(itertools.chain.from_iterable(violation_codepoints.values()))}

@@ -4,7 +4,7 @@ Regex violation == \src\.||\s\s||[A-z]\s[,;\.]||\D\s?[\/,∕,/,／,⧸]\s?\D||[A
 
 [OCR-D-2]
 Hex violation == 0xE000-0xF8FF||0xFB00-0xFB06||0xA728-0xA729||0xA732-0xA73D||0x1EFA-0x1EFB
-Regex violation == sz||\src\.||\s\s||\s[,;\.]
+Regex violation == sz||\src\.||\s\s||[A-z]\s[,\.]
 
 [OCR-D-3]
 # I und J Unterscheidung

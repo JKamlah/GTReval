@@ -66,8 +66,9 @@ def evaluate(fpaths, output, json, custom_categories, statistical_categories, mi
             with io.open(str(fname.resolve()), 'r', encoding='utf-8') as fin:
                 try:
                     text = unicodedata.normalize(evalu.textnormalization, fin.read().strip())
-                    get_defaultdict(results['single'], fname)
-                    results['single'][fname]['text'] = text
+                    for idx, textline in enumerate(text.split('\n')):
+                        get_defaultdict(results['single'], fname.name+f'_{idx}')
+                        results['single'][fname.name+f'_{idx}']['text'] = textline
                 except UnicodeDecodeError:
                     if evalu.verbose:
                         print(f"{fname.name} (ignored)")
