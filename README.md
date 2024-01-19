@@ -3,6 +3,11 @@ GTReval
 ![Python 3.6](https://img.shields.io/badge/python-3.6-yellow.svg)
 ![license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)
 
+⚠️WARNING⚠️   
+Please use PagePlus instead of this repository!
+
+
+
 ## Overview
 **Evaluates and Revaluates OCR Ground Truth data**
 
