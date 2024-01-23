@@ -137,6 +137,8 @@ def validate_with_guidelines(results: DefaultDict, evalu) -> None:
                         if count:
                             get_defaultdict(results["guidelines"][guideline], conditionkey, instance=int)
                             results["guidelines"][guideline][conditionkey][condition] += len(count)
+                            pid, file = file.split(':', 1)
+                            file = str(results['path_indexes'][f"{pid}"].joinpath(file.rsplit('_', 1)[0]))
                             evalu.print(str(file))
                             evalu.print(condition)
                             evalu.print(text + '\n')

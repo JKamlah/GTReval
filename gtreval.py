@@ -60,15 +60,17 @@ def evaluate(fpaths, output, json, custom_categories, statistical_categories, mi
     results = defaultdict(OrderedDict)
 
     # Read all files
-    for fpath, fnames in evalu.files.items():
-        for fname in fnames:
+    for pidx, (fpath, fnames) in enumerate(evalu.files.items()):
+        get_defaultdict(results['path_indexes'], f"{pidx}")
+        results['path_indexes'][f"{pidx}"] = fpath.absolute()
+        for fname in fnames[:10]:
             evalu.orig_fname = fname
             with io.open(str(fname.resolve()), 'r', encoding='utf-8') as fin:
                 try:
                     text = unicodedata.normalize(evalu.textnormalization, fin.read().strip())
                     for idx, textline in enumerate(text.split('\n')):
-                        get_defaultdict(results['single'], fname.name+f'_{idx}')
-                        results['single'][fname.name+f'_{idx}']['text'] = textline
+                        get_defaultdict(results['single'], f'{pidx}:'+fname.name+f'_{idx}')
+                        results['single'][f'{pidx}:'+fname.name+f'_{idx}']['text'] = textline
                 except UnicodeDecodeError:
                     if evalu.verbose:
                         print(f"{fname.name} (ignored)")
