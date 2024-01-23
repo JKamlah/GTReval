@@ -63,7 +63,7 @@ def evaluate(fpaths, output, json, custom_categories, statistical_categories, mi
     for pidx, (fpath, fnames) in enumerate(evalu.files.items()):
         get_defaultdict(results['path_indexes'], f"{pidx}")
         results['path_indexes'][f"{pidx}"] = fpath.absolute()
-        for fname in fnames[:10]:
+        for fname in fnames:
             evalu.orig_fname = fname
             with io.open(str(fname.resolve()), 'r', encoding='utf-8') as fin:
                 try:
