@@ -194,6 +194,8 @@ def create_report(result: DefaultDict, evalu) -> None:
     """
     fpoint = 10
     fnames = '; '.join(set([str(fpath.resolve()) for fpath in evalu.files.keys()]))
+    path_indexes = result['path_indexes']
+    del result['path_indexes']
     if not evalu.output:
         evalu.fout = sys.stdout
     else:
